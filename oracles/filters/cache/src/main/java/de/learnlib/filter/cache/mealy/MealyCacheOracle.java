@@ -65,7 +65,7 @@ public class MealyCacheOracle<I, O> implements MealyLearningCacheOracle<I, O> {
     private final Comparator<? super Query<I, ?>> queryCmp;
     private final Mapping<? super O, ? extends O> errorSyms;
 
-    MealyCacheOracle(IncrementalMealyBuilder<I, O> incrementalBuilder,
+    public MealyCacheOracle(IncrementalMealyBuilder<I, O> incrementalBuilder,
                      Mapping<? super O, ? extends O> errorSyms,
                      MembershipOracle<I, Word<O>> delegate) {
         this(incrementalBuilder, new ReentrantLock(), errorSyms, delegate);
@@ -81,6 +81,7 @@ public class MealyCacheOracle<I, O> implements MealyLearningCacheOracle<I, O> {
         this.errorSyms = errorSyms;
         this.delegate = delegate;
     }
+
 
     public static <I, O> MealyCacheOracle<I, O> createDAGCacheOracle(Alphabet<I> inputAlphabet,
                                                                      MembershipOracle<I, Word<O>> delegate) {
@@ -154,8 +155,12 @@ public class MealyCacheOracle<I, O> implements MealyLearningCacheOracle<I, O> {
                 ref = curr;
             }
         } finally {
+
             incMealyLock.unlock();
         }
+
+        if(masterQueries.isEmpty())
+            return;
 
         delegate.processQueries(masterQueries);
 

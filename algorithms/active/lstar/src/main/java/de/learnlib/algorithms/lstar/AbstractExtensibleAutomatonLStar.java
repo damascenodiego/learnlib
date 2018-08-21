@@ -75,8 +75,12 @@ public abstract class AbstractExtensibleAutomatonLStar<A, I, D, S, T, SP, TP, AI
 
     public static final class BuilderDefaults {
 
+        private BuilderDefaults() {
+            // prevent instantiation
+        }
+
         public static <I> List<Word<I>> initialPrefixes() {
-            return Collections.singletonList(Word.<I>epsilon());
+            return Collections.singletonList(Word.epsilon());
         }
 
         public static <I> List<Word<I>> initialSuffixes() {

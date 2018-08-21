@@ -33,7 +33,6 @@ import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.datastructure.discriminationtree.MultiDTree;
 import de.learnlib.datastructure.discriminationtree.model.AbstractWordBasedDTNode;
-import de.learnlib.datastructure.discriminationtree.model.AbstractWordBasedDiscriminationTree;
 import de.learnlib.datastructure.discriminationtree.model.LCAInfo;
 import de.learnlib.util.mealy.MealyUtil;
 import net.automatalib.automata.transout.MealyMachine;
@@ -59,7 +58,7 @@ public class KearnsVaziraniMealy<I, O>
     private final MembershipOracle<I, Word<O>> oracle;
     private final boolean repeatedCounterexampleEvaluation;
     private final AcexAnalyzer ceAnalyzer;
-    protected AbstractWordBasedDiscriminationTree<I, Word<O>, StateInfo<I, Word<O>>> discriminationTree;
+    protected MultiDTree<I, Word<O>, StateInfo<I, Word<O>>> discriminationTree;
     protected List<StateInfo<I, Word<O>>> stateInfos = new ArrayList<>();
     private CompactMealy<I, O> hypothesis;
 
@@ -104,6 +103,10 @@ public class KearnsVaziraniMealy<I, O>
             throw new IllegalStateException("Not started");
         }
         return hypothesis;
+    }
+
+    public MultiDTree<I, Word<O>, StateInfo<I, Word<O>>> getDiscriminationTree() {
+        return discriminationTree;
     }
 
     private boolean refineHypothesisSingle(Word<I> input, Word<O> output) {
@@ -206,7 +209,7 @@ public class KearnsVaziraniMealy<I, O>
         int state = hypothesis.addIntInitialState();
         assert state == stateInfos.size();
 
-        StateInfo<I, Word<O>> stateInfo = new StateInfo<>(state, Word.<I>epsilon());
+        StateInfo<I, Word<O>> stateInfo = new StateInfo<>(state, Word.epsilon());
         stateInfos.add(stateInfo);
 
         return stateInfo;
@@ -317,7 +320,11 @@ public class KearnsVaziraniMealy<I, O>
         this.stateInfos = state.getStateInfos();
     }
 
-    static final class BuilderDefaults {
+    public static final class BuilderDefaults {
+
+        private BuilderDefaults() {
+            // prevent instantiation
+        }
 
         public static boolean repeatedCounterexampleEvaluation() {
             return true;

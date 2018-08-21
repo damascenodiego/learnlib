@@ -110,6 +110,10 @@ public class KearnsVaziraniDFA<I>
         return hypothesis;
     }
 
+    public BinaryDTree<I, StateInfo<I, Boolean>> getDiscriminationTree() {
+        return discriminationTree;
+    }
+
     private boolean refineHypothesisSingle(Word<I> input, boolean output) {
         int inputLen = input.length();
 
@@ -199,7 +203,7 @@ public class KearnsVaziraniDFA<I>
 
     private StateInfo<I, Boolean> createInitialState(boolean accepting) {
         int state = hypothesis.addIntInitialState(accepting);
-        StateInfo<I, Boolean> si = new StateInfo<>(state, Word.<I>epsilon());
+        StateInfo<I, Boolean> si = new StateInfo<>(state, Word.epsilon());
         assert stateInfos.size() == state;
         stateInfos.add(si);
 
@@ -299,7 +303,11 @@ public class KearnsVaziraniDFA<I>
         this.stateInfos = state.getStateInfos();
     }
 
-    static final class BuilderDefaults {
+    public static final class BuilderDefaults {
+
+        private BuilderDefaults() {
+            // prevent instantiation
+        }
 
         public static boolean repeatedCounterexampleEvaluation() {
             return true;

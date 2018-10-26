@@ -92,6 +92,7 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
     private final Queue<DefaultQuery<I, Word<O>>> openCounterExamples;
     private final Set<DefaultQuery<I, Word<O>>> allCounterExamples;
     private final ObservationTree<ADTState<I, O>, I, O> observationTree;
+    private final boolean useCache;
     private ADTHypothesis<I, O> hypothesis;
     private ADT<ADTState<I, O>, I, O> adt;
 
@@ -100,11 +101,13 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
                       final SymbolQueryOracle<I, O> oracle,
                       final LeafSplitter leafSplitter,
                       final ADTExtender adtExtender,
-                      final SubtreeReplacer subtreeReplacer) {
+                      final SubtreeReplacer subtreeReplacer,
+                      final boolean useCache) {
 
         this.alphabet = SymbolHidingAlphabet.wrapIfMutable(alphabet);
         this.observationTree = new ObservationTree<>(this.alphabet);
-        this.oracle = new SQOOTBridge<>(this.observationTree, oracle, true);
+        this.useCache = useCache;
+        this.oracle = new SQOOTBridge<>(this.observationTree, oracle, useCache);
 
         this.leafSplitter = leafSplitter;
         this.adtExtender = adtExtender;
@@ -813,6 +816,10 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
 
         private BuilderDefaults() {
             // prevent instantiation
+        }
+
+        public static boolean useCache() {
+            return true;
         }
 
         public static LeafSplitter leafSplitter() {

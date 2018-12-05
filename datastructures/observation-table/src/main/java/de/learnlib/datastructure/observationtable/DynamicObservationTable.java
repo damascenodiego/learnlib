@@ -26,32 +26,32 @@ import java.io.Serializable;
 import java.util.*;
 
 /**
- * Observation table class.
+ * Dynamic Observation table class.
  * <p>
- * An observation table (OT) is the central data structure used by Angluin's L* algorithm, as described in the paper
- * "Learning Regular Sets from Queries and Counterexamples".
+ * A dynamic observation table (dOT) is an extension of the traditional OT proposed by Dana Angluin
+ * inspired by Chaki et al.'s Dynamic L* algorithm, as described in the paper
+ * "Verification of evolving software via component substitutability analysis".
  * <p>
- * An observation table is a two-dimensional table, with rows indexed by prefixes, and columns indexed by suffixes. For
- * a prefix <code>u</code> and a suffix <code>v</code>, the respective cell contains the result of the membership query
- * <code>(u, v)</code>.
+ * A dOT is a two-dimensional table, with rows indexed by prefixes, and columns indexed by suffixes
+ * which differs to the traditional OT on the way it is initialized.
  * <p>
- * The set of prefixes (row labels) is divided into two disjoint sets: short and long prefixes. Each long prefix is a
- * one-letter extension of a short prefix; conversely, every time a prefix is added to the set of short prefixes, all
- * possible one-letter extensions are added to the set of long prefixes.
- * <p>
- * In order to derive a well-defined hypothesis from an observation table, it must satisfy two properties: closedness
- * and consistency. <ul> <li>An observation table is <b>closed</b> iff for each long prefix <code>u</code> there exists
- * a short prefix <code>u'</code> such that the row contents for both prefixes are equal. <li>An observation table is
- * <b>consistent</b> iff for every two short prefixes <code>u</code> and <code>u'</code> with identical row contents, it
- * holds that for every input symbol <code>a</code> the rows indexed by <code>ua</code> and <code>u'a</code> also have
- * identical contents. </ul>
+ * A dOT can be initialized with initial prefix/suffix sets where, instead of asking MQs for them all,
+ * prefixes are gradually concatenated to the set of initial suffixes and revalidated to the SUL.
+ * Thus, redundant MQs can be avoided by prunning the tree representation of the set of prefixes for
+ * <i>finding an well-formed cover subset</i> from the <code>initialShortPrefixes</code> set.
+ *
+ * Added to redundant prefixes, the <code>initialSuffixes</code> set may also include redundant suffixes.
+ * Thus, to reduce the number of MQs after initialization, redundant suffixes are discarded by
+ * <i>finding an experiment cover subset</i> from the <code>initialSuffixes</code> set so that the next steps
+ * for restoring the properties of closedness and consistency do not pose MQs using unnecessary suffixes.
+ *
  *
  * @param <I>
  *         input symbol type
  * @param <D>
  *         output domain type
  *
- * @author Malte Isberner
+ * @author Carlos Diego Nascimento Damasceno (damascenodiego@usp.br)
  */
 public final class DynamicObservationTable<I, D> implements MutableObservationTable<I, D>, Serializable {
 

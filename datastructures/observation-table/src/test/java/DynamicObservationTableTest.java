@@ -21,7 +21,6 @@ import de.learnlib.api.SUL;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.statistic.StatisticSUL;
 import de.learnlib.datastructure.observationtable.DynamicObservationTable;
-import de.learnlib.datastructure.observationtable.GenericObservationTable;
 import de.learnlib.datastructure.observationtable.MutableObservationTable;
 import de.learnlib.datastructure.observationtable.ObservationTable;
 import de.learnlib.datastructure.observationtable.writer.ObservationTableASCIIWriter;
@@ -139,20 +138,185 @@ public class DynamicObservationTableTest {
         setUpInitSets(initPrefixes,initSuffixes);
 
         MutableObservationTable<String,Integer> dOT = new DynamicObservationTable<>(alphabet);
-//        MutableObservationTable<String,Integer> dOT = new GenericObservationTable<>(alphabet);
 
         dOT.initialize(initPrefixes,initSuffixes,oracleForLearner);
 
         long tot_mq_rst  = ((Counter)mq_rst.getStatisticalData()).getCount();
         long tot_mq_symb = ((Counter)mq_sym.getStatisticalData()).getCount();
 
-        System.out.println(mq_rst.getStatisticalData());
-        System.out.println(mq_sym.getStatisticalData());
+        // Check if building the Dynamic OT required posing 43 MQs, such that
+        //  36 resulted from the concatenation of S_M \cdot E_M, where
+        //      S_M = { ε, a, a b, a b a, a b c, a a } // 6 prefixes
+        //      E_M = { a, b, c, b c, a a a, c c } // 6 suffixes
+        //  and 7 were resulting from the extension of
+        //  the well-formed cover subset of { ε, a, a b } \subset S_M
+        //  concatenated to the experiment cover subset { b c } \subset E_M
+        Assert.assertEquals(tot_mq_rst,43);
+        Assert.assertEquals(tot_mq_symb,155);
 
         ObservationTableASCIIWriter<String,Integer> ot_writer = new ObservationTableASCIIWriter<>();
+        StringBuilder sb_expected = new StringBuilder();
+        StringBuilder sb_obtained = new StringBuilder();
+        sb_expected.append("+=======+=====+\n" +
+                "|       | b c |\n" +
+                "+=======+=====+\n" +
+                "| ε     | 0 0 |\n" +
+                "+-------+-----+\n" +
+                "| a     | 1 1 |\n" +
+                "+-------+-----+\n" +
+                "| a b   | 0 1 |\n" +
+                "+=======+=====+\n" +
+                "| b     | 0 0 |\n" +
+                "+-------+-----+\n" +
+                "| c     | 0 0 |\n" +
+                "+-------+-----+\n" +
+                "| a a   | 1 1 |\n" +
+                "+-------+-----+\n" +
+                "| a c   | 1 1 |\n" +
+                "+-------+-----+\n" +
+                "| a b a | 1 1 |\n" +
+                "+-------+-----+\n" +
+                "| a b b | 0 1 |\n" +
+                "+-------+-----+\n" +
+                "| a b c | 0 0 |\n" +
+                "+=======+=====+\n");
+        ot_writer.write(dOT,sb_obtained);
 
-        ot_writer.write(dOT,System.out);
+        Assert.assertEquals(sb_expected.toString(),sb_obtained.toString());
 
+        Assert.assertEquals(dOT.getShortPrefixRows().size(),3);
+        Assert.assertEquals(dOT.getRow(0).getLabel(),Word.epsilon());
+        Assert.assertEquals(dOT.getRow(1).getLabel(),Word.epsilon().append("a"));
+        Assert.assertEquals(dOT.getRow(2).getLabel(),Word.epsilon().append("a").append("b"));
+
+        Assert.assertEquals(dOT.getSuffixes().size(),1);
+        Assert.assertEquals(dOT.getSuffixes().get(0),Word.epsilon().append("b").append("c"));
+
+
+    }
+
+
+    @Test
+    public void testTradInitSetup(){
+
+        setUpModel();
+
+        // SUL simulator
+        SUL<String,Integer> sulSim = new MealySimulatorSUL<>(mealym);
+
+        // Counter for MQs
+        StatisticSUL<String, Integer> mq_sym = new SymbolCounterSUL<>("MQ", sulSim);
+        // Counter for EQs
+        StatisticSUL<String, Integer>  mq_rst = new ResetCounterSUL<>("MQ", mq_sym);
+
+        // Membership oracle used by the observation table
+        MembershipOracle<String,Integer> oracleForLearner  = new SULOracle(mq_rst);
+
+        // setup initial prefix setÉ D'Oxum
+        List<Word<String>> initPrefixes = new ArrayList<>();
+        initPrefixes.add(Word.epsilon());
+
+        List<Word<String>> initSuffixes = new ArrayList<>();
+        for (String in: mealym.getInputAlphabet()) {
+            Word<String> in_wrd = Word.epsilon();
+            in_wrd = in_wrd.append(in);
+
+            initSuffixes.add(in_wrd);
+        }
+
+
+        MutableObservationTable<String,Integer> dOT = new DynamicObservationTable<>(alphabet);
+
+        dOT.initialize(initPrefixes,initSuffixes,oracleForLearner);
+
+        long tot_mq_rst  = ((Counter)mq_rst.getStatisticalData()).getCount();
+        long tot_mq_symb = ((Counter)mq_sym.getStatisticalData()).getCount();
+
+        Assert.assertEquals(tot_mq_rst,12);
+        Assert.assertEquals(tot_mq_symb,21);
+
+        ObservationTableASCIIWriter<String,Integer> ot_writer = new ObservationTableASCIIWriter<>();
+        StringBuilder sb_expected = new StringBuilder();
+        StringBuilder sb_obtained = new StringBuilder();
+        sb_expected.append("+===+===+===+===+\n" +
+                "|   | a | b | c |\n" +
+                "+===+===+===+===+\n" +
+                "| ε | 1 | 0 | 0 |\n" +
+                "+===+===+===+===+\n" +
+                "| a | 0 | 1 | 0 |\n" +
+                "+---+---+---+---+\n" +
+                "| b | 1 | 0 | 0 |\n" +
+                "+---+---+---+---+\n" +
+                "| c | 1 | 0 | 0 |\n" +
+                "+===+===+===+===+\n");
+        ot_writer.write(dOT,sb_obtained);
+
+        Assert.assertEquals(sb_expected.toString(),sb_obtained.toString());
+
+        Assert.assertEquals(dOT.getShortPrefixRows().size(),1);
+        Assert.assertEquals(dOT.getRow(0).getLabel(),Word.epsilon());
+
+        Assert.assertEquals(dOT.getSuffixes().size(),3);
+        Assert.assertEquals(dOT.getSuffixes().get(0),Word.epsilon().append("a"));
+        Assert.assertEquals(dOT.getSuffixes().get(1),Word.epsilon().append("b"));
+        Assert.assertEquals(dOT.getSuffixes().get(2),Word.epsilon().append("c"));
+
+    }
+
+    @Test
+    public void InitSetupL1(){
+
+        setUpModel();
+
+        // SUL simulator
+        SUL<String,Integer> sulSim = new MealySimulatorSUL<>(mealym);
+
+        // Counter for MQs
+        StatisticSUL<String, Integer> mq_sym = new SymbolCounterSUL<>("MQ", sulSim);
+        // Counter for EQs
+        StatisticSUL<String, Integer>  mq_rst = new ResetCounterSUL<>("MQ", mq_sym);
+
+        // Membership oracle used by the observation table
+        MembershipOracle<String,Integer> oracleForLearner  = new SULOracle(mq_rst);
+
+        // setup initial prefix setÉ D'Oxum
+        List<Word<String>> initPrefixes = new ArrayList<>();
+        initPrefixes.add(Word.epsilon());
+
+        List<Word<String>> initSuffixes = new ArrayList<>();
+
+        MutableObservationTable<String,Integer> dOT = new DynamicObservationTable<>(alphabet);
+
+        dOT.initialize(initPrefixes,initSuffixes,oracleForLearner);
+
+        long tot_mq_rst  = ((Counter)mq_rst.getStatisticalData()).getCount();
+        long tot_mq_symb = ((Counter)mq_sym.getStatisticalData()).getCount();
+
+        Assert.assertEquals(tot_mq_rst,0);
+        Assert.assertEquals(tot_mq_symb,0);
+
+        ObservationTableASCIIWriter<String,Integer> ot_writer = new ObservationTableASCIIWriter<>();
+        StringBuilder sb_expected = new StringBuilder();
+        StringBuilder sb_obtained = new StringBuilder();
+        sb_expected.append("+===+\n" +
+                "|   |\n" +
+                "+===+\n" +
+                "| ε |\n" +
+                "+===+\n" +
+                "| a |\n" +
+                "+---+\n" +
+                "| b |\n" +
+                "+---+\n" +
+                "| c |\n" +
+                "+===+\n");
+        ot_writer.write(dOT,sb_obtained);
+
+        Assert.assertEquals(sb_expected.toString(),sb_obtained.toString());
+
+        Assert.assertEquals(dOT.getShortPrefixRows().size(),1);
+        Assert.assertEquals(dOT.getRow(0).getLabel(),Word.epsilon());
+
+        Assert.assertEquals(dOT.getSuffixes().size(),0);
 
     }
 

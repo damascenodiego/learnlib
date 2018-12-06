@@ -2,6 +2,7 @@ package de.learnlib.datastructure.observationtable;
 
 import net.automatalib.words.Word;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -9,13 +10,14 @@ import java.util.Set;
 public class DynamicDistinguishableStates<I,D> {
 
     private Map<Word<I>, List<D>> observationMap;
-    private List<I> suffixes;
     private Set<Set<Word<I>>> distinguishedStates;
     private Set<Integer> eSubset;
     private boolean isSingleton;
 
     public DynamicDistinguishableStates(Map<Word<I>, List<D>> omap) {
         this.observationMap = omap;
+        eSubset = new HashSet<>();
+        distinguishedStates = new HashSet<>();
     }
 
     public DynamicDistinguishableStates(
@@ -26,12 +28,7 @@ public class DynamicDistinguishableStates<I,D> {
         this.distinguishedStates = states;
         this.eSubset = esubset;
         this.isSingleton = false;
-        for (Set<Word<I>> set : this.distinguishedStates) {
-            if (set.size() != 1) {
-                return;
-            }
-        }
-        this.isSingleton = true;
+        setDistinguishedStates(states);
     }
 
     public Set<Set<Word<I>>> getDistinguishedStates() {
@@ -42,10 +39,6 @@ public class DynamicDistinguishableStates<I,D> {
         return eSubset;
     }
 
-//    public ObservationTable<String, Word<Word<String>>> getObservationTable() {
-//        return observationTable;
-//    }
-
     public boolean isSingleton() {
         return isSingleton;
     }
@@ -53,7 +46,7 @@ public class DynamicDistinguishableStates<I,D> {
     public void setDistinguishedStates(Set<Set<Word<I>>> states) {
         this.distinguishedStates = states;
         for (Set<Word<I>> set : this.distinguishedStates) {
-            if (set.size() != 1) {
+            if (!((set.size() == 1) && (eSubset.size()>0))) {
                 return;
             }
         }

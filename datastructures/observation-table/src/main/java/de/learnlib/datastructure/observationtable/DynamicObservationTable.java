@@ -258,6 +258,15 @@ public final class DynamicObservationTable<I, D> implements MutableObservationTa
     // find the experiment cover set using an approach similar to that for synchronizing trees
     List<Integer> findExperimentCover(Map<Word<I>, List<D>> observationMap, List<Word<I>> suffixes){
 
+        List<Integer> out = new ArrayList<>();
+
+        if(shortPrefixRows.size()==1){
+            for (int i = 0; i < suffixes.size(); i++) {
+                out.add(i);
+            }
+            return out;
+        }
+
         // keeps the set of distinguished states and the suffixes used to do it
         List<DynamicDistinguishableStates<I,D>> toAnalyze = new ArrayList<>();
 
@@ -345,7 +354,6 @@ public final class DynamicObservationTable<I, D> implements MutableObservationTa
         // ExperimentCover.find: Analysis end!
 
 
-        List<Integer> out = new ArrayList<>();
         if(item.isSingleton()){
             // if item is singleton then return its suffixes
             out.addAll(item.getESubset());

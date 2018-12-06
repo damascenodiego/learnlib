@@ -139,7 +139,7 @@ public class ExtensibleDLStarMealyTest extends LearningTest {
         }
     }
 
-    public void setUpModel(){
+    void setUpModel(){
         //setup input alphabet
         Set<String> abc = new HashSet<>();
         abc.add("a");
@@ -178,7 +178,7 @@ public class ExtensibleDLStarMealyTest extends LearningTest {
 
     }
 
-    public void setUpInitSets(List<Word<String>> initPref, List<Word<String>> initSuf){
+    void setUpInitSets(List<Word<String>> initPref, List<Word<String>> initSuf){
         initPref.clear();
 
         Word<String> in = Word.epsilon();

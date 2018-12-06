@@ -1,5 +1,8 @@
-/* Copyright (C) 2013-2018 TU Dortmund
- * This file is part of LearnLib, http://www.learnlib.de/.
+/* Copyright (C) 2018
+ * This file is part of the PhD research project entitled
+ * 'Inferring models from Evolving Systems and Product Families'
+ * developed by Carlos Diego Nascimento Damasceno at the
+ * University of Sao Paulo (ICMC-USP).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +20,7 @@ package de.learnlib.datastructure.observationtable;
 
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
+import net.automatalib.commons.util.comparison.CmpUtil;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 import net.automatalib.words.impl.Alphabets;
@@ -104,22 +108,84 @@ public final class DynamicObservationTable<I, D> implements MutableObservationTa
             throw new IllegalArgumentException("First initial short prefix MUST be the empty word!");
         }
 
-        int numSuffixes = initialSuffixes.size();
+        // copy S_M and E_M to not change the objects passed as parameter
+        List<Word<I>> t_initialShortPrefixes = new ArrayList<>(initialShortPrefixes);
+        List<Word<I>> t_initialSuffixes = new ArrayList<>(initialSuffixes.size());
+
+        // sort S_M for having EMPTY string at the first position and help on discarding redundant prefixes
+        Alphabet<I> abc = this.alphabet;
+        Collections.sort(t_initialShortPrefixes, new Comparator<Word<I>>() {
+            @Override
+            public int compare(Word<I> o1, Word<I> o2) { return CmpUtil.lexCompare(o1, o2, abc); }
+        });
+
+        // for loop to remove duplicated suffixes
+        Set<Word<I>> t_suffixSet = new HashSet<>();
         for (Word<I> suffix : initialSuffixes) {
-            if (suffixSet.add(suffix)) {
-                suffixes.add(suffix);
+            // checks if there are duplicated suffixes
+            if (t_suffixSet.add(suffix))  t_initialSuffixes.add(suffix);
+        }
+
+        // max number of suffixes and prefixes
+        int numSuffixes = t_initialSuffixes.size();
+        int numPrefixes = alphabet.size() * t_initialShortPrefixes.size() + 1;
+
+        // temporary list of queries w/IO pairs
+        List<DefaultQuery<I, D>> t_queries = new ArrayList<>(numPrefixes * numSuffixes);
+        List<DefaultQuery<I, D>> t_all_queries = new ArrayList<>(numPrefixes * numSuffixes);
+
+        // set of observed outputs (helps to identify states reached using other prefixes)
+        Set<List<D>> t_observedOutputs = new HashSet<>(numPrefixes * numSuffixes);
+
+        // list to keep the outputs of each row for each query posed
+        List<D> t_outputs = null;
+
+        // outputs obtained for all short rows included at the well-formed cover subset
+        Map<Word<I>,List<D>> observationMap = new HashMap<>();
+
+        // PASS 1: Gradually add short prefix rows while finding an well-formed cover subset from initialSuffixes
+        for (int i = 0; i < t_initialShortPrefixes.size(); i++) {
+            // queries to be posed
+            t_queries.clear();
+
+            // new t_outputs to be included at the observationMap
+            t_outputs = new ArrayList<>();
+
+            // prefix to be concatenated with E_M and posed as MQ
+            Word<I> sp = t_initialShortPrefixes.get(i);
+            buildQueries(t_queries, sp, t_initialSuffixes);
+            oracle.processQueries(t_queries);
+
+            // concatenate outputs to compare with those previously observed
+            Iterator<DefaultQuery<I, D>> queryIt = t_queries.iterator();
+            while (queryIt.hasNext()) t_outputs.add(queryIt.next().getOutput());
+
+            // if NOT observed previously
+            if(!t_observedOutputs.contains(t_outputs)){
+                // Finally add sp to the set of short prefixes S_M
+                createSpRow(sp);
+                t_observedOutputs.add(t_outputs);
+                observationMap.put(sp,t_outputs);
+
+            }else if(i < t_initialShortPrefixes.size()-1){
+                while (sp.isPrefixOf(t_initialShortPrefixes.get(++i))){
+                    if(i >= t_initialShortPrefixes.size())  break;
+                }
+                i--;
+            }
+            t_all_queries.addAll(t_queries);
+        }
+
+        // Find an experiment cover subset from the initialSuffixes set
+        List<Integer> experimentCoverSubset_id = findExperimentCover(observationMap,t_initialSuffixes);
+
+        for (int i = 0; i < experimentCoverSubset_id .size(); i++) {
+            if (suffixSet.add(t_initialSuffixes.get(experimentCoverSubset_id.get(i)))) {
+                suffixes.add(t_initialSuffixes.get(experimentCoverSubset_id.get(i)));
             }
         }
 
-        int numPrefixes = alphabet.size() * initialShortPrefixes.size() + 1;
-
         List<DefaultQuery<I, D>> queries = new ArrayList<>(numPrefixes * numSuffixes);
-
-        // PASS 1: Add short prefix rows
-        for (Word<I> sp : initialShortPrefixes) {
-            createSpRow(sp);
-            buildQueries(queries, sp, suffixes);
-        }
 
         // PASS 2: Add missing long prefix rows
         for (RowImpl<I> spRow : shortPrefixRows) {
@@ -137,6 +203,20 @@ public final class DynamicObservationTable<I, D> implements MutableObservationTa
         }
 
         oracle.processQueries(queries);
+
+        int pos = 0;
+        for (DefaultQuery<I, D> t_query:t_all_queries) {
+            if(observationMap.containsKey(t_query.getPrefix()) && getSuffixes().contains(t_query.getSuffix())){
+                queries.add(pos,t_query);
+                pos++;
+            }
+        }
+
+        // update number of prefixes to the size of the well-formed cover subset
+        numPrefixes = alphabet.size() * getShortPrefixRows().size() + 1;
+
+        // update number of suffixes to the size of the experiment cover subsets
+        numSuffixes = getSuffixes().size();
 
         Iterator<DefaultQuery<I, D>> queryIt = queries.iterator();
 
@@ -173,6 +253,107 @@ public final class DynamicObservationTable<I, D> implements MutableObservationTa
         }
 
         return unclosed;
+    }
+
+    // find the experiment cover set using an approach similar to that for synchronizing trees
+    List<Integer> findExperimentCover(Map<Word<I>, List<D>> observationMap, List<Word<I>> suffixes){
+
+        // keeps the set of distinguished states and the suffixes used to do it
+        List<DynamicDistinguishableStates<I,D>> toAnalyze = new ArrayList<>();
+
+        // set of nodes found (used to find previously visited states)
+        Set<Set<Set<Word<I>>>> nodesFound = new HashSet<>();
+
+        // creates the first DynamicDistinguishableStates w/all states undistinguished
+        Set<Set<Word<I>>> diff_states = new HashSet<>();
+        diff_states.add(observationMap.keySet());
+
+        // no suffixes applied
+        Set<Integer> eSubset = new HashSet<>();
+
+        toAnalyze.add(new DynamicDistinguishableStates<I,D>(observationMap, diff_states, eSubset));
+
+        // current DynamicDistinguishableStates analyzed ( singleton is kept here )
+        DynamicDistinguishableStates<I,D> item = toAnalyze.get(0);
+
+        // the DynamicDistinguishableStates with the 'best' subset of E
+        DynamicDistinguishableStates<I,D> best = toAnalyze.get(0);
+
+        // ExperimentCover.find: Analysis begin"
+        while (!toAnalyze.isEmpty()) {
+            item = toAnalyze.remove(0);
+
+            // Does item distinguish the largest number of states ?
+            if(item.getDistinguishedStates().size()>best.getDistinguishedStates().size()) {
+                // then keep it as the best option
+                best = item;
+            }
+
+            // ExperimentCover.find: Singleton found!
+            if(item.isSingleton()) {
+                break; // Thus, stop here!!! :)
+            }
+
+            // get number of suffixes
+            for (int sufIdx = 0; sufIdx < suffixes.size(); sufIdx++){
+                if(item.getESubset().contains(sufIdx)) {
+                    continue; // suffix already applied to this item
+                }
+
+                // new subset of states that may be distinguished by 'sufIdx'
+                diff_states = new HashSet<>();
+
+                // subset of suffixes (potential experiment cover)
+                eSubset = new HashSet<>();
+
+                Set<Set<Word<I>>> setOfPrefixes = item.getDistinguishedStates();
+                for (Set<Word<I>> prefixes : setOfPrefixes) {
+                    // maps the outputs to rows (used for keeping states equivalent given 'sufIdx')
+                    Map<Integer,Set<Integer>> out2Rows = new TreeMap<>();
+                    // look 'sufIdx' for each prefix
+                    for (Word<I> pref : prefixes) {
+                        D outStr = observationMap.get(pref).get(sufIdx);
+                        // if outStr is new, then add sufIdx as an useful suffix
+                        if(out2Rows.putIfAbsent(outStr.hashCode(), new HashSet<Integer>()) == null){
+                            eSubset.add(sufIdx);
+                        }
+                        out2Rows.get(outStr.hashCode()).add(getShortPrefixRows().indexOf(getRow(pref)));
+                    }
+                    // the subsets of states that are distinguished by 'sufIdx'
+                    for (Set<Integer> sset: out2Rows.values()) {
+                        Set<Word<I>> sset_word = new HashSet<>();
+                        for (Integer sset_item: sset) {
+                            sset_word.add(getShortPrefixRows().get(sset_item).getLabel());
+                        }
+                        diff_states.add(sset_word);
+                    }
+
+                }
+                // if diff_states was previously visited, then discard! :(
+                if(nodesFound.contains(diff_states)) continue;
+                nodesFound.add(diff_states); // otherwise keep it!
+                // create a new de.learnlib.datastructure.observationtable.DynamicDistinguishableStates
+                DynamicDistinguishableStates new_diststates = new DynamicDistinguishableStates(observationMap);
+                new_diststates.setDistinguishedStates(diff_states);
+                // add previously applied suffixes to eSubset (i.e., { eSubset \cup 'sufIdx'}
+                eSubset.addAll(item.getESubset());
+                new_diststates.setESubset(eSubset);
+                // add it to be analyzed later
+                toAnalyze.add(new_diststates);
+            }
+        }
+        // ExperimentCover.find: Analysis end!
+
+
+        List<Integer> out = new ArrayList<>();
+        if(item.isSingleton()){
+            // if item is singleton then return its suffixes
+            out.addAll(item.getESubset());
+        }else{
+            // otherwise add the 'best' subset of E
+            out.addAll(best.getESubset());
+        }
+        return out;
     }
 
     private static <I> boolean checkPrefixClosed(Collection<? extends Word<I>> initialShortPrefixes) {

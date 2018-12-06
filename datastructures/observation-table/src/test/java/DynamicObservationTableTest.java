@@ -1,5 +1,8 @@
 /* Copyright (C) 2018
- * This file is part of LearnLib, http://www.learnlib.de/.
+ * This file is part of the PhD research project entitled
+ * 'Inferring models from Evolving Systems and Product Families'
+ * developed by Carlos Diego Nascimento Damasceno at the
+ * University of Sao Paulo (ICMC-USP).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +19,16 @@
 
 import de.learnlib.api.SUL;
 import de.learnlib.api.oracle.MembershipOracle;
+import de.learnlib.api.statistic.StatisticSUL;
 import de.learnlib.datastructure.observationtable.DynamicObservationTable;
+import de.learnlib.datastructure.observationtable.GenericObservationTable;
+import de.learnlib.datastructure.observationtable.MutableObservationTable;
+import de.learnlib.datastructure.observationtable.ObservationTable;
+import de.learnlib.datastructure.observationtable.writer.ObservationTableASCIIWriter;
 import de.learnlib.driver.util.MealySimulatorSUL;
+import de.learnlib.filter.statistic.Counter;
+import de.learnlib.filter.statistic.sul.ResetCounterSUL;
+import de.learnlib.filter.statistic.sul.SymbolCounterSUL;
 import de.learnlib.oracle.membership.SULOracle;
 import net.automatalib.automata.transout.impl.compact.CompactMealy;
 import net.automatalib.commons.util.comparison.CmpUtil;
@@ -36,8 +47,10 @@ import java.util.*;
  */
 public class DynamicObservationTableTest {
 
-    @Test
-    public void testRemoveRedundancy(){
+    private CompactMealy<String, Integer> mealym;
+    private Alphabet<String> alphabet;
+
+    public void setUpModel(){
         //setup input alphabet
         Set<String> abc = new HashSet<>();
         abc.add("a");
@@ -45,8 +58,8 @@ public class DynamicObservationTableTest {
         abc.add("c");
 
         // create fsm_agm_1
-        Alphabet<String> alphabet = Alphabets.fromCollection(abc);
-        CompactMealy<String, Integer> mealym = new CompactMealy<String, Integer>(alphabet);
+        alphabet = Alphabets.fromCollection(abc);
+        mealym = new CompactMealy<>(alphabet);
 
         int s1 = mealym.addState();
         int s4 = mealym.addState();
@@ -67,52 +80,78 @@ public class DynamicObservationTableTest {
         mealym.addTransition(s4, "b", s5, 1);
 //        4 -- c/_0() -> 4
         mealym.addTransition(s4, "c", s4, 0);
-//        5 -- a/_1() -> 4
+//        5 -- a/_1() -> 4setup
         mealym.addTransition(s5, "a", s4, 1);
 //        5 -- b/_0() -> 5
         mealym.addTransition(s5, "b", s5, 0);
 //        5 -- c/_1() -> 1
         mealym.addTransition(s5, "c", s1, 1);
 
-        // SUL simulator
-        SUL<String,Integer> sulSim = new MealySimulatorSUL(mealym);
-        MembershipOracle<String,Integer> oracleForLearner  = new SULOracle(sulSim);
+    }
 
-
-        // setup initial prefix set
-        List<Word<String>> initPrefixes = new ArrayList<Word<String>>();
+    public void setUpInitSets(List<Word<String>> initPref, List<Word<String>> initSuf){
+        initPref.clear();
 
         Word<String> in = Word.epsilon();
-        initPrefixes.add(in.append("a"));
-        initPrefixes.add(in.append("a").append("b"));
-        initPrefixes.add(in.append("a").append("b").append("a"));
-        initPrefixes.add(in.append("a").append("b").append("c"));
-        initPrefixes.add(in.append("a").append("a"));
-        initPrefixes.add(Word.epsilon());
-        // System.out.println(initPrefixes);
-        // sort them all
-        Collections.sort(initPrefixes, new Comparator<Word<String>>() {
-            @Override
-            public int compare(Word<String> o1, Word<String> o2) {
-                return CmpUtil.lexCompare(o1, o2, alphabet);
-            }
-        });
-        // System.out.println(initPrefixes);
+        // epsilon must be in the first position
+        initPref.add(Word.epsilon());
 
-        List<Word<String>> initSuffixes = new ArrayList<Word<String>>();
-        initSuffixes.add(in.append("a"));
-        initSuffixes.add(in.append("b"));
-        initSuffixes.add(in.append("c"));
-        initSuffixes.add(in.append("b").append("c"));
-        initSuffixes.add(in.append("a").append("a").append("a"));
-        initSuffixes.add(in.append("c").append("c"));
+        initPref.add(in.append("a"));
+        initPref.add(in.append("a").append("b"));
+        initPref.add(in.append("a").append("b").append("a"));
+        initPref.add(in.append("a").append("b").append("c"));
+        initPref.add(in.append("a").append("a"));
+        initPref.add(in.append("a").append("a").append("a"));
+        initPref.add(in.append("a").append("a").append("a").append("a"));
+        initPref.add(in.append("a").append("a").append("a").append("b"));
 
-        DynamicObservationTable<String,Integer> dOT = new DynamicObservationTable<>(alphabet);
+        initSuf.clear();
+        initSuf.add(in.append("a"));
+        initSuf.add(in.append("b"));
+        initSuf.add(in.append("c"));
+        initSuf.add(in.append("b").append("c"));
+        //initSuf.add(in.append("b").append("c"));
+        initSuf.add(in.append("a").append("a").append("a"));
+        initSuf.add(in.append("c").append("c"));
+
+    }
+
+    @Test
+    public void testRemoveRedundancy(){
+
+        setUpModel();
+
+        // SUL simulator
+        SUL<String,Integer> sulSim = new MealySimulatorSUL<>(mealym);
+
+        // Counter for MQs
+        StatisticSUL<String, Integer> mq_sym = new SymbolCounterSUL<>("MQ", sulSim);
+        // Counter for EQs
+        StatisticSUL<String, Integer>  mq_rst = new ResetCounterSUL<>("MQ", mq_sym);
+
+        // Membership oracle used by the observation table
+        MembershipOracle<String,Integer> oracleForLearner  = new SULOracle(mq_rst);
+
+        // setup initial prefix set
+        List<Word<String>> initPrefixes = new ArrayList<>();
+        List<Word<String>> initSuffixes = new ArrayList<>();
+
+        setUpInitSets(initPrefixes,initSuffixes);
+
+        MutableObservationTable<String,Integer> dOT = new DynamicObservationTable<>(alphabet);
+//        MutableObservationTable<String,Integer> dOT = new GenericObservationTable<>(alphabet);
 
         dOT.initialize(initPrefixes,initSuffixes,oracleForLearner);
 
-        System.out.println(dOT.getAllPrefixes());
-        System.out.println(dOT.getSuffixes());
+        long tot_mq_rst  = ((Counter)mq_rst.getStatisticalData()).getCount();
+        long tot_mq_symb = ((Counter)mq_sym.getStatisticalData()).getCount();
+
+        System.out.println(mq_rst.getStatisticalData());
+        System.out.println(mq_sym.getStatisticalData());
+
+        ObservationTableASCIIWriter<String,Integer> ot_writer = new ObservationTableASCIIWriter<>();
+
+        ot_writer.write(dOT,System.out);
 
 
     }

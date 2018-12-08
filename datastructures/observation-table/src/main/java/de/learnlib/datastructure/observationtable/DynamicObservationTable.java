@@ -169,7 +169,7 @@ public final class DynamicObservationTable<I, D> implements MutableObservationTa
 
             }else if(i < t_initialShortPrefixes.size()-1){
                 while (sp.isPrefixOf(t_initialShortPrefixes.get(++i))){
-                    if(i >= t_initialShortPrefixes.size())  break;
+                    if(i+1 == t_initialShortPrefixes.size())  break;
                 }
                 i--;
             }

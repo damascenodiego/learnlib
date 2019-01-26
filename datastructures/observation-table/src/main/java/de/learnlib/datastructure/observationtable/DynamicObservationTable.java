@@ -167,9 +167,10 @@ public final class DynamicObservationTable<I, D> implements MutableObservationTa
                 t_observedOutputs.add(t_outputs);
                 observationMap.put(sp,t_outputs);
 
-            }else if(i < t_initialShortPrefixes.size()-1){
-                while (sp.isPrefixOf(t_initialShortPrefixes.get(++i))){
-                    if(i+1 == t_initialShortPrefixes.size())  break;
+            }else if(i < t_initialShortPrefixes.size()){
+                while (sp.isPrefixOf(t_initialShortPrefixes.get(i))){
+                    i++;
+                    if(i == t_initialShortPrefixes.size())  break;
                 }
                 i--;
             }

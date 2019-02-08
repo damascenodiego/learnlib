@@ -144,15 +144,15 @@ public class DynamicObservationTableTest {
         long tot_mq_rst  = ((Counter)mq_rst.getStatisticalData()).getCount();
         long tot_mq_symb = ((Counter)mq_sym.getStatisticalData()).getCount();
 
-        // Check if building the Dynamic OT required posing 43 MQs, such that
-        //  36 resulted from the concatenation of S_M \cdot E_M, where
+        // Check if building the Dynamic OT required posing 35 MQs, such that
+        //  35 resulted from the concatenation of S_M \cdot E_M, where
         //      S_M = { ε, a, a b, a b a, a b c, a a } // 6 prefixes
         //      E_M = { a, b, c, b c, a a a, c c } // 6 suffixes
         //  and 7 were resulting from the extension of
         //  the well-formed cover subset of { ε, a, a b } \subset S_M
         //  concatenated to the experiment cover subset { b c } \subset E_M
-        Assert.assertEquals(tot_mq_rst,43);
-        Assert.assertEquals(tot_mq_symb,155);
+        Assert.assertEquals(tot_mq_rst,67);
+        Assert.assertEquals(tot_mq_symb,237);
 
         ObservationTableASCIIWriter<String,Integer> ot_writer = new ObservationTableASCIIWriter<>();
         StringBuilder sb_expected = new StringBuilder();

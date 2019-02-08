@@ -112,8 +112,23 @@ public final class DynamicObservationTable<I, D> implements MutableObservationTa
         List<Word<I>> t_initialShortPrefixes = new ArrayList<>(initialShortPrefixes);
         List<Word<I>> t_initialSuffixes = new ArrayList<>(initialSuffixes.size());
 
-        // sort S_M for having EMPTY string at the first position and help on discarding redundant prefixes
+        // if has more than empty sequence, then include S_R \cdot I_u
         Alphabet<I> abc = this.alphabet;
+        if(t_initialShortPrefixes.size()!=1){
+            List<Word<I>> sr_cdot_i = new ArrayList<>(t_initialShortPrefixes.size()*abc.size());
+            for (Word<I> pref : t_initialShortPrefixes){
+                for (I i_u_symb: abc){
+                    sr_cdot_i.add(pref.append(i_u_symb));
+                }
+            }
+            for (Word<I> pref : sr_cdot_i){
+                if(!t_initialShortPrefixes.contains(pref)){
+                    t_initialShortPrefixes.add(pref);
+                }
+            }
+        }
+
+        // sort S_M for having EMPTY string at the first position and help on discarding redundant prefixes
         Collections.sort(t_initialShortPrefixes, new Comparator<Word<I>>() {
             @Override
             public int compare(Word<I> o1, Word<I> o2) { return CmpUtil.lexCompare(o1, o2, abc); }
@@ -327,7 +342,7 @@ public final class DynamicObservationTable<I, D> implements MutableObservationTa
                         if(out2Rows.putIfAbsent(outStr.hashCode(), new HashSet<Integer>()) == null){
                             eSubset.add(sufIdx);
                         }
-                        out2Rows.get(outStr.hashCode()).add(getShortPrefixRows().indexOf(getRow(pref)));
+                        out2Rows.get(outStr.hashCode()).add(getRow(pref).getRowId());
                     }
                     // the subsets of states that are distinguished by 'sufIdx'
                     for (Set<Integer> sset: out2Rows.values()) {

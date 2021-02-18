@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,100 +15,36 @@
  */
 package de.learnlib.oracle.parallelism;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Supplier;
 
-import javax.annotation.Nonnegative;
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.oracle.MembershipOracle;
-import de.learnlib.oracle.parallelism.ParallelOracle.PoolPolicy;
+import de.learnlib.api.oracle.parallelism.ThreadPool.PoolPolicy;
+import de.learnlib.api.query.Query;
 
 /**
- * A builder for a {@link StaticParallelOracle}.
+ * A specialized {@link AbstractStaticBatchProcessorBuilder} for {@link MembershipOracle}s.
  *
  * @param <I>
  *         input symbol type
  * @param <D>
- *         output type
- *
- * @author Malte Isberner
+ *         output domain type
  */
-@ParametersAreNonnullByDefault
-public class StaticParallelOracleBuilder<I, D> {
-
-    private final Collection<? extends MembershipOracle<I, D>> oracles;
-    private final Supplier<? extends MembershipOracle<I, D>> oracleSupplier;
-    @Nonnegative
-    private int minBatchSize = StaticParallelOracle.MIN_BATCH_SIZE;
-    @Nonnegative
-    private int numInstances = StaticParallelOracle.NUM_INSTANCES;
-    @Nonnull
-    private PoolPolicy poolPolicy = StaticParallelOracle.POOL_POLICY;
+public class StaticParallelOracleBuilder<I, D>
+        extends AbstractStaticBatchProcessorBuilder<Query<I, D>, MembershipOracle<I, D>, StaticParallelOracle<I, D>> {
 
     public StaticParallelOracleBuilder(Collection<? extends MembershipOracle<I, D>> oracles) {
-        this.oracles = oracles;
-        this.oracleSupplier = null;
+        super(oracles);
     }
 
     public StaticParallelOracleBuilder(Supplier<? extends MembershipOracle<I, D>> oracleSupplier) {
-        this.oracles = null;
-        this.oracleSupplier = oracleSupplier;
+        super(oracleSupplier);
     }
 
-    @Nonnull
-    public StaticParallelOracleBuilder<I, D> withDefaultMinBatchSize() {
-        this.minBatchSize = StaticParallelOracle.MIN_BATCH_SIZE;
-        return this;
-    }
-
-    @Nonnull
-    public StaticParallelOracleBuilder<I, D> withMinBatchSize(@Nonnegative int minBatchSize) {
-        this.minBatchSize = minBatchSize;
-        return this;
-    }
-
-    @Nonnull
-    public StaticParallelOracleBuilder<I, D> withDefaultPoolPolicy() {
-        this.poolPolicy = StaticParallelOracle.POOL_POLICY;
-        return this;
-    }
-
-    @Nonnull
-    public StaticParallelOracleBuilder<I, D> withPoolPolicy(PoolPolicy policy) {
-        this.poolPolicy = policy;
-        return this;
-    }
-
-    @Nonnull
-    public StaticParallelOracleBuilder<I, D> withDefaultNumInstances() {
-        this.numInstances = StaticParallelOracle.NUM_INSTANCES;
-        return this;
-    }
-
-    @Nonnull
-    public StaticParallelOracleBuilder<I, D> withNumInstances(@Nonnegative int numInstances) {
-        this.numInstances = numInstances;
-        return this;
-    }
-
-    @Nonnull
-    public StaticParallelOracle<I, D> create() {
-        Collection<? extends MembershipOracle<I, D>> oracleInstances;
-        if (oracles != null) {
-            oracleInstances = oracles;
-        } else {
-            List<MembershipOracle<I, D>> oracleList = new ArrayList<>(numInstances);
-            for (int i = 0; i < numInstances; i++) {
-                oracleList.add(oracleSupplier.get());
-            }
-            oracleInstances = oracleList;
-        }
-
+    @Override
+    protected StaticParallelOracle<I, D> buildOracle(Collection<? extends MembershipOracle<I, D>> oracleInstances,
+                                                     int minBatchSize,
+                                                     PoolPolicy poolPolicy) {
         return new StaticParallelOracle<>(oracleInstances, minBatchSize, poolPolicy);
     }
-
 }

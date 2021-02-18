@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,8 +22,9 @@ import java.util.Random;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.datastructure.observationtable.ObservationTable;
 import de.learnlib.datastructure.observationtable.Row;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-public class CloseRandomStrategy implements ClosingStrategy<Object, Object> {
+public class CloseRandomStrategy implements ClosingStrategy<@Nullable Object, @Nullable Object> {
 
     private final Random random;
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,15 +17,17 @@ package de.learnlib.oracle.equivalence.mealy;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 import de.learnlib.api.SUL;
 import de.learnlib.api.oracle.EquivalenceOracle.MealyEquivalenceOracle;
 import de.learnlib.api.query.DefaultQuery;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.commons.util.collections.CollectionsUtil;
 import net.automatalib.words.Word;
 import net.automatalib.words.WordBuilder;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +69,7 @@ public class RandomWalkEQOracle<I, O> implements MealyEquivalenceOracle<I, O> {
      */
     private long steps;
     /**
-     * flag for reseting step count after every search.
+     * flag for resetting step count after every search.
      */
     private boolean resetStepCount;
 
@@ -80,10 +82,7 @@ public class RandomWalkEQOracle<I, O> implements MealyEquivalenceOracle<I, O> {
         this.resetStepCount = resetStepCount;
     }
 
-    public RandomWalkEQOracle(SUL<I, O> sul,
-                              double restartProbability,
-                              long maxSteps,
-                              Random random) {
+    public RandomWalkEQOracle(SUL<I, O> sul, double restartProbability, long maxSteps, Random random) {
         this.restartProbability = restartProbability;
         this.maxSteps = maxSteps;
         this.random = random;
@@ -91,13 +90,13 @@ public class RandomWalkEQOracle<I, O> implements MealyEquivalenceOracle<I, O> {
     }
 
     @Override
-    public DefaultQuery<I, Word<O>> findCounterExample(MealyMachine<?, I, ?, O> hypothesis,
-                                                       Collection<? extends I> inputs) {
+    public @Nullable DefaultQuery<I, Word<O>> findCounterExample(MealyMachine<?, I, ?, O> hypothesis,
+                                                                 Collection<? extends I> inputs) {
         return doFindCounterExample(hypothesis, inputs);
     }
 
-    private <S, T> DefaultQuery<I, Word<O>> doFindCounterExample(MealyMachine<S, I, T, O> hypothesis,
-                                                                 Collection<? extends I> inputs) {
+    private <S, T> @Nullable DefaultQuery<I, Word<O>> doFindCounterExample(MealyMachine<S, I, T, O> hypothesis,
+                                                                           Collection<? extends I> inputs) {
         // reset termination counter?
         if (resetStepCount) {
             steps = 0;
@@ -141,13 +140,13 @@ public class RandomWalkEQOracle<I, O> implements MealyEquivalenceOracle<I, O> {
 
                 outSul = sul.step(in);
 
-                T hypTrans = hypothesis.getTransition(cur, in);
-                O outHyp = hypothesis.getTransitionOutput(hypTrans);
+                assert cur != null;
+                O outHyp = hypothesis.getTransitionProperty(cur, in);
                 wbIn.add(in);
                 wbOut.add(outSul);
 
                 // ce?
-                if (!outSul.equals(outHyp)) {
+                if (!Objects.equals(outSul, outHyp)) {
                     DefaultQuery<I, Word<O>> ce = new DefaultQuery<>(wbIn.toWord());
                     ce.answer(wbOut.toWord());
                     return ce;

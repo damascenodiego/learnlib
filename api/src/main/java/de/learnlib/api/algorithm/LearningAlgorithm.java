@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +15,10 @@
  */
 package de.learnlib.api.algorithm;
 
-import javax.annotation.Nonnull;
-
 import de.learnlib.api.oracle.EquivalenceOracle;
 import de.learnlib.api.query.DefaultQuery;
 import net.automatalib.automata.fsa.DFA;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.words.Word;
 
 /**
@@ -55,10 +53,10 @@ public interface LearningAlgorithm<M, I, D> {
      * @param ceQuery
      *         the query which exposes diverging behavior, as posed to the real SUL (i.e. with the SULs output).
      *
-     * @return <tt>true</tt> if the counterexample triggered a refinement of the hypothesis, <tt>false</tt> otherwise
+     * @return {@code true} if the counterexample triggered a refinement of the hypothesis, {@code false} otherwise
      * (i.e., it was no counterexample).
      */
-    boolean refineHypothesis(@Nonnull DefaultQuery<I, D> ceQuery);
+    boolean refineHypothesis(DefaultQuery<I, D> ceQuery);
 
     /**
      * Returns the current hypothesis model.
@@ -73,7 +71,6 @@ public interface LearningAlgorithm<M, I, D> {
      *
      * @return the current hypothesis model.
      */
-    @Nonnull
     M getHypothesisModel();
 
     interface DFALearner<I> extends LearningAlgorithm<DFA<?, I>, I, Boolean> {}

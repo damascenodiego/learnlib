@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,8 @@ import java.util.AbstractCollection;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
+
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A generic deque-derived container which transparently acts <i>either</i> as a stack <i>or</i> a queue, and optionally
@@ -82,7 +84,7 @@ public class BoundedDeque<E> extends AbstractCollection<E> implements Serializab
      *
      * @return the evicted element, {@code null} if the maximum capacity has not been reached
      */
-    public E insert(E element) {
+    public @Nullable E insert(E element) {
         E evicted = null;
         if (size() >= capacity) {
             if (evictPolicy == EvictPolicy.REJECT_NEW) {
@@ -110,7 +112,6 @@ public class BoundedDeque<E> extends AbstractCollection<E> implements Serializab
             default:
                 throw new IllegalStateException("Illegal evict policy: " + evictPolicy);
         }
-
     }
 
     /**

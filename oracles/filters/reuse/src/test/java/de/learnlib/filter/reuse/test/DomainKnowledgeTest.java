@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,9 @@
  */
 package de.learnlib.filter.reuse.test;
 
-import com.google.common.base.Supplier;
-import com.google.common.collect.Sets;
+import java.util.Collections;
+import java.util.function.Supplier;
+
 import de.learnlib.filter.reuse.ReuseCapableOracle;
 import de.learnlib.filter.reuse.ReuseCapableOracle.QueryResult;
 import de.learnlib.filter.reuse.ReuseOracle;
@@ -45,9 +46,8 @@ public class DomainKnowledgeTest {
         // We don't use this oracle, we directly test against the reuse tree!
         Alphabet<Integer> alphabet = Alphabets.integers(0, 10);
 
-        reuseOracle = new ReuseOracle.ReuseOracleBuilder<>(alphabet,
-                                                           new NullReuseCapableFactory()).withInvariantInputs(Sets.newHashSet(
-                0)).build();
+        reuseOracle = new ReuseOracle.ReuseOracleBuilder<>(alphabet, new NullReuseCapableFactory()).withInvariantInputs(
+                Collections.singleton(0)).build();
     }
 
     @Test
@@ -90,7 +90,8 @@ public class DomainKnowledgeTest {
         Word<Integer> input = getInput(1, 0, 1, 1);
         NodeResult<Integer, Integer, String> node = reuseOracle.getReuseTree().fetchSystemState(input);
 
-        Assert.assertTrue(node.prefixLength == 3); // ''1 0 1''
+        Assert.assertNotNull(node);
+        Assert.assertEquals(node.prefixLength, 3); // ''1 0 1''
         // reuse the prefix
         qr = new QueryResult<>(getOutput("ok"), 3);
         reuseOracle.getReuseTree().insert(getInput(1), node.reuseNode, qr);
@@ -102,7 +103,7 @@ public class DomainKnowledgeTest {
         // There should be a "1 1 1" system state, even this query was never seen
         node = reuseOracle.getReuseTree().fetchSystemState(getInput(1, 1, 1));
         Assert.assertNotNull(node);
-        Assert.assertTrue(node.prefixLength == 3); // query "1 1 1"
+        Assert.assertEquals(node.prefixLength, 3); // query "1 1 1"
 
         // The system state is invalidated, so querying again "1 1 1" reveals null this time
         node = reuseOracle.getReuseTree().fetchSystemState(getInput(1, 1, 1));
@@ -111,7 +112,7 @@ public class DomainKnowledgeTest {
         // The output of "1 0 0 0 0 1 1" should be known, even the query was never seen
         Word<String> output = reuseOracle.getReuseTree().getOutput(getInput(1, 0, 0, 0, 0, 1, 1));
         Assert.assertNotNull(output);
-        Assert.assertTrue(output.size() == 7);
+        Assert.assertEquals(output.size(), 7);
     }
 
     private class NullReuseCapableFactory implements Supplier<ReuseCapableOracle<Integer, Integer, String>> {

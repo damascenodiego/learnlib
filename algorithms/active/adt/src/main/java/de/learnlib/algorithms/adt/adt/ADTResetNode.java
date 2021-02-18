@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,10 +19,9 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.oracle.SymbolQueryOracle;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Reset node implementation.
@@ -36,23 +35,22 @@ import net.automatalib.words.Word;
  *
  * @author frohme
  */
-@ParametersAreNonnullByDefault
 public class ADTResetNode<S, I, O> implements ADTNode<S, I, O>, Serializable {
 
-    final ADTNode<S, I, O> successor;
-    ADTNode<S, I, O> parent;
+    private final ADTNode<S, I, O> successor;
+    private ADTNode<S, I, O> parent;
 
     public ADTResetNode(final ADTNode<S, I, O> successor) {
         this.successor = successor;
     }
 
     @Override
-    public I getSymbol() {
+    public @Nullable I getSymbol() {
         return null;
     }
 
     @Override
-    public void setSymbol(I symbol) throws UnsupportedOperationException {
+    public void setSymbol(I symbol) {
         throw new UnsupportedOperationException("Reset nodes do not have a symbol");
     }
 
@@ -72,7 +70,7 @@ public class ADTResetNode<S, I, O> implements ADTNode<S, I, O>, Serializable {
     }
 
     @Override
-    public S getHypothesisState() {
+    public @Nullable S getHypothesisState() {
         return null;
     }
 

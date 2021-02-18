@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,7 @@ import java.util.Collection;
 
 import de.learnlib.api.oracle.EquivalenceOracle;
 import de.learnlib.api.query.DefaultQuery;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class DelegateEQOracle<A, I, D> implements EquivalenceOracle<A, I, D> {
 
@@ -29,7 +30,7 @@ public class DelegateEQOracle<A, I, D> implements EquivalenceOracle<A, I, D> {
     }
 
     @Override
-    public DefaultQuery<I, D> findCounterExample(A hypothesis, Collection<? extends I> inputs) {
+    public @Nullable DefaultQuery<I, D> findCounterExample(A hypothesis, Collection<? extends I> inputs) {
         return delegate.findCounterExample(hypothesis, inputs);
     }
 

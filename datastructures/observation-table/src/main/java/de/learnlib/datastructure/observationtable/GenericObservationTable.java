@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,13 +26,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 import net.automatalib.words.impl.Alphabets;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Observation table class.
@@ -51,7 +50,8 @@ import net.automatalib.words.impl.Alphabets;
  * In order to derive a well-defined hypothesis from an observation table, it must satisfy two properties: closedness
  * and consistency. <ul> <li>An observation table is <b>closed</b> iff for each long prefix <code>u</code> there exists
  * a short prefix <code>u'</code> such that the row contents for both prefixes are equal. <li>An observation table is
- * <b>consistent</b> iff for every two short prefixes <code>u</code> and <code>u'</code> with identical row contents, it
+ * <b>consistent</b> iff for every two short prefixes <code>u</code> and <code>u'</code> with identical row contents,
+ * it
  * holds that for every input symbol <code>a</code> the rows indexed by <code>ua</code> and <code>u'a</code> also have
  * identical contents. </ul>
  *
@@ -64,19 +64,20 @@ import net.automatalib.words.impl.Alphabets;
  */
 public final class GenericObservationTable<I, D> implements MutableObservationTable<I, D>, Serializable {
 
-    private static final Integer NO_ENTRY = null; // TODO: replace with primitive specialization
+    private static final int NO_ENTRY = -1;
     private final List<RowImpl<I>> shortPrefixRows = new ArrayList<>();
     // private static final int NO_ENTRY = -1;
     private final List<RowImpl<I>> longPrefixRows = new ArrayList<>();
     private final List<RowImpl<I>> allRows = new ArrayList<>();
     private final List<List<D>> allRowContents = new ArrayList<>();
-    private final List<RowImpl<I>> canonicalRows = new ArrayList<>();
+    private final List<@Nullable RowImpl<I>> canonicalRows = new ArrayList<>();
     // private final TObjectIntMap<List<D>> rowContentIds = new TObjectIntHashMap<>(10, 0.75f, NO_ENTRY);
     private final Map<List<D>, Integer> rowContentIds = new HashMap<>(); // TODO: replace with primitive specialization
     private final Map<Word<I>, RowImpl<I>> rowMap = new HashMap<>();
     private final List<Word<I>> suffixes = new ArrayList<>();
     private final Set<Word<I>> suffixSet = new HashSet<>();
     private transient Alphabet<I> alphabet;
+    private transient int alphabetSize;
     private int numRows;
     private boolean initialConsistencyCheckRequired;
 
@@ -88,6 +89,7 @@ public final class GenericObservationTable<I, D> implements MutableObservationTa
      */
     public GenericObservationTable(Alphabet<I> alphabet) {
         this.alphabet = alphabet;
+        this.alphabetSize = alphabet.size();
     }
 
     private static <I, D> void buildQueries(List<DefaultQuery<I, D>> queryList,
@@ -98,10 +100,11 @@ public final class GenericObservationTable<I, D> implements MutableObservationTa
         }
     }
 
+    @Override
     public List<List<Row<I>>> initialize(List<Word<I>> initialShortPrefixes,
                                          List<Word<I>> initialSuffixes,
                                          MembershipOracle<I, D> oracle) {
-        if (allRows.size() > 0) {
+        if (!allRows.isEmpty()) {
             throw new IllegalStateException("Called initialize, but there are already rows present");
         }
 
@@ -235,10 +238,9 @@ public final class GenericObservationTable<I, D> implements MutableObservationTa
     }
 
     private boolean processContents(RowImpl<I> row, List<D> rowContents, boolean makeCanonical) {
-        Integer contentId; // TODO: replace with primitive specialization
-        // int contentId;
+        int contentId;
         boolean added = false;
-        contentId = rowContentIds.get(rowContents);
+        contentId = rowContentIds.getOrDefault(rowContents, NO_ENTRY);
         if (contentId == NO_ENTRY) {
             contentId = numberOfDistinctRows();
             rowContentIds.put(rowContents, contentId);
@@ -254,14 +256,17 @@ public final class GenericObservationTable<I, D> implements MutableObservationTa
         return added;
     }
 
+    @Override
     public int numberOfDistinctRows() {
         return allRowContents.size();
     }
 
+    @Override
     public List<List<Row<I>>> addSuffix(Word<I> suffix, MembershipOracle<I, D> oracle) {
         return addSuffixes(Collections.singletonList(suffix), oracle);
     }
 
+    @Override
     public List<List<Row<I>>> addSuffixes(Collection<? extends Word<I>> newSuffixes, MembershipOracle<I, D> oracle) {
         int oldSuffixCount = suffixes.size();
         // we need a stable iteration order, and only List guarantees this
@@ -338,10 +343,12 @@ public final class GenericObservationTable<I, D> implements MutableObservationTa
         return unclosed;
     }
 
+    @Override
     public boolean isInitialConsistencyCheckRequired() {
         return initialConsistencyCheckRequired;
     }
 
+    @Override
     public List<List<Row<I>>> addShortPrefixes(List<? extends Word<I>> shortPrefixes, MembershipOracle<I, D> oracle) {
         List<Row<I>> toSpRows = new ArrayList<>();
 
@@ -360,6 +367,7 @@ public final class GenericObservationTable<I, D> implements MutableObservationTa
         return toShortPrefixes(toSpRows, oracle);
     }
 
+    @Override
     public List<List<Row<I>>> toShortPrefixes(List<Row<I>> lpRows, MembershipOracle<I, D> oracle) {
         List<RowImpl<I>> freshSpRows = new ArrayList<>();
         List<RowImpl<I>> freshLpRows = new ArrayList<>();
@@ -427,9 +435,9 @@ public final class GenericObservationTable<I, D> implements MutableObservationTa
         return unclosed;
     }
 
-    private boolean makeShort(RowImpl<I> row) {
+    private void makeShort(RowImpl<I> row) {
         if (row.isShortPrefixRow()) {
-            return false;
+            return;
         }
 
         int lastIdx = longPrefixRows.size() - 1;
@@ -450,7 +458,6 @@ public final class GenericObservationTable<I, D> implements MutableObservationTa
                 canonicalRows.set(cid, row);
             }
         }
-        return true;
     }
 
     private static <I, D> void buildRowQueries(List<DefaultQuery<I, D>> queryList,
@@ -461,31 +468,32 @@ public final class GenericObservationTable<I, D> implements MutableObservationTa
         }
     }
 
-    public D cellContents(Row<I> row, int columnId) {
-        List<D> contents = rowContents(row);
-        return contents.get(columnId);
-    }
-
+    @Override
     public List<D> rowContents(Row<I> row) {
         return allRowContents.get(row.getRowContentId());
     }
 
+    @Override
     public RowImpl<I> getRow(int rowId) {
         return allRows.get(rowId);
     }
 
+    @Override
     public int numberOfRows() {
         return shortPrefixRows.size() + longPrefixRows.size();
     }
 
+    @Override
     public List<Word<I>> getSuffixes() {
         return suffixes;
     }
 
+    @Override
     public boolean isInitialized() {
-        return (allRows.size() > 0);
+        return !allRows.isEmpty();
     }
 
+    @Override
     public Alphabet<I> getInputAlphabet() {
         return alphabet;
     }
@@ -503,10 +511,12 @@ public final class GenericObservationTable<I, D> implements MutableObservationTa
     @Override
     public Word<I> transformAccessSequence(Word<I> word) {
         Row<I> current = shortPrefixRows.get(0);
+        assert current != null;
 
         for (I sym : word) {
             current = getRowSuccessor(current, sym);
             current = canonicalRows.get(current.getRowContentId());
+            assert current != null;
         }
 
         return current.getLabel();
@@ -537,57 +547,59 @@ public final class GenericObservationTable<I, D> implements MutableObservationTa
     @Override
     public List<List<Row<I>>> addAlphabetSymbol(I symbol, final MembershipOracle<I, D> oracle) {
 
-        if (this.alphabet.containsSymbol(symbol)) {
+        if (!alphabet.containsSymbol(symbol)) {
+            Alphabets.toGrowingAlphabetOrThrowException(alphabet).addSymbol(symbol);
+        }
+
+        final int newAlphabetSize = alphabet.size();
+
+        if (this.isInitialized() && this.alphabetSize < newAlphabetSize) {
+            this.alphabetSize = newAlphabetSize;
+            final int newSymbolIdx = alphabet.getSymbolIndex(symbol);
+
+            final List<RowImpl<I>> shortPrefixes = shortPrefixRows;
+            final List<RowImpl<I>> newLongPrefixes = new ArrayList<>(shortPrefixes.size());
+
+            for (RowImpl<I> prefix : shortPrefixes) {
+                prefix.ensureInputCapacity(newAlphabetSize);
+
+                final Word<I> newLongPrefix = prefix.getLabel().append(symbol);
+                final RowImpl<I> longPrefixRow = createLpRow(newLongPrefix);
+
+                newLongPrefixes.add(longPrefixRow);
+                prefix.setSuccessor(newSymbolIdx, longPrefixRow);
+            }
+
+            final int numLongPrefixes = newLongPrefixes.size();
+            final int numSuffixes = this.numberOfSuffixes();
+            final List<DefaultQuery<I, D>> queries = new ArrayList<>(numLongPrefixes * numSuffixes);
+
+            buildRowQueries(queries, newLongPrefixes, getSuffixes());
+            oracle.processQueries(queries);
+
+            final Iterator<DefaultQuery<I, D>> queryIterator = queries.iterator();
+            final List<List<Row<I>>> result = new ArrayList<>(numLongPrefixes);
+
+            for (RowImpl<I> row : newLongPrefixes) {
+                final List<D> contents = new ArrayList<>(numSuffixes);
+
+                fetchResults(queryIterator, contents, numSuffixes);
+
+                if (processContents(row, contents, false)) {
+                    result.add(Collections.singletonList(row));
+                }
+            }
+            return result;
+        } else {
             return Collections.emptyList();
         }
-
-        this.alphabet = Alphabets.withNewSymbol(this.alphabet, symbol);
-        final int newAlphabetSize = this.alphabet.size();
-        final int newSymbolIdx = this.alphabet.getSymbolIndex(symbol);
-
-        final List<RowImpl<I>> shortPrefixes = shortPrefixRows;
-        final List<RowImpl<I>> newLongPrefixes = new ArrayList<>(shortPrefixes.size());
-
-        for (RowImpl<I> prefix : shortPrefixes) {
-            prefix.ensureInputCapacity(newAlphabetSize);
-
-            final Word<I> newLongPrefix = prefix.getLabel().append(symbol);
-            final RowImpl<I> longPrefixRow = createLpRow(newLongPrefix);
-
-            newLongPrefixes.add(longPrefixRow);
-            prefix.setSuccessor(newSymbolIdx, longPrefixRow);
-        }
-
-        final int numLongPrefixes = newLongPrefixes.size();
-        final int numSuffixes = this.numberOfSuffixes();
-        final List<DefaultQuery<I, D>> queries = new ArrayList<>(numLongPrefixes * numSuffixes);
-
-        buildRowQueries(queries, newLongPrefixes, suffixes);
-        oracle.processQueries(queries);
-
-        final Iterator<DefaultQuery<I, D>> queryIterator = queries.iterator();
-        final List<List<Row<I>>> result = new ArrayList<>(numLongPrefixes);
-
-        for (RowImpl<I> row : newLongPrefixes) {
-            final List<D> contents = new ArrayList<>(numSuffixes);
-
-            fetchResults(queryIterator, contents, numSuffixes);
-
-            if (processContents(row, contents, false)) {
-                result.add(Collections.singletonList(row));
-            }
-        }
-
-        return result;
     }
 
-    @Nonnull
     @Override
     public List<Row<I>> getShortPrefixRows() {
         return Collections.unmodifiableList(shortPrefixRows);
     }
 
-    @Nonnull
     @Override
     public Collection<Row<I>> getLongPrefixRows() {
         return Collections.unmodifiableList(longPrefixRows);

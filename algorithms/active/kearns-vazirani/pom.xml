@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Copyright (C) 2013-2018 TU Dortmund
+Copyright (C) 2013-2020 TU Dortmund
 This file is part of LearnLib, http://www.learnlib.de/.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,30 +17,29 @@ limitations under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>de.learnlib</groupId>
         <artifactId>learnlib-algorithms-active-parent</artifactId>
-        <version>0.13.1</version>
+        <version>0.16.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+
     <artifactId>learnlib-kearns-vazirani</artifactId>
+
     <name>LearnLib :: Algorithms :: Kearns/Vazirani</name>
     <description>The automata learning algorithm described by Kearns &amp; Vazirani</description>
 
     <dependencies>
+        <!-- internal -->
+        <dependency>
+            <groupId>de.learnlib</groupId>
+            <artifactId>learnlib-acex</artifactId>
+        </dependency>
         <dependency>
             <groupId>de.learnlib</groupId>
             <artifactId>learnlib-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>net.automatalib</groupId>
-            <artifactId>automata-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.automatalib</groupId>
-            <artifactId>automata-core</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>de.learnlib</groupId>
             <artifactId>learnlib-datastructure-dt</artifactId>
@@ -49,24 +48,41 @@ limitations under the License.
             <groupId>de.learnlib</groupId>
             <artifactId>learnlib-util</artifactId>
         </dependency>
+
+        <!-- external -->
         <dependency>
-            <groupId>de.learnlib</groupId>
-            <artifactId>learnlib-acex</artifactId>
+            <groupId>net.automatalib</groupId>
+            <artifactId>automata-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.automatalib</groupId>
+            <artifactId>automata-commons-smartcollections</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.automatalib</groupId>
+            <artifactId>automata-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.checkerframework</groupId>
+            <artifactId>checker-qual</artifactId>
+        </dependency>
+
+        <!-- build -->
+        <dependency>
+            <groupId>com.github.misberner.buildergen</groupId>
+            <artifactId>buildergen</artifactId>
+        </dependency>
+
+        <!-- test -->
+        <dependency>
+            <groupId>de.learnlib.testsupport</groupId>
+            <artifactId>learnlib-learner-it-support</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>de.learnlib.testsupport</groupId>
-            <artifactId>learnlib-learner-it-support</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.misberner.buildergen</groupId>
-            <artifactId>buildergen</artifactId>
         </dependency>
     </dependencies>
 </project>

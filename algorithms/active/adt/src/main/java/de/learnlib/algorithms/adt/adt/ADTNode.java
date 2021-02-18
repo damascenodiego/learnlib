@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -56,7 +56,7 @@ public interface ADTNode<S, I, O> extends RecursiveADSNode<S, I, O, ADTNode<S, I
      * @throws UnsupportedOperationException
      *         when invoked on a leaf node (see {@link #getNodeType()}.
      */
-    ADTNode<S, I, O> sift(SymbolQueryOracle<I, O> oracle, Word<I> prefix) throws UnsupportedOperationException;
+    ADTNode<S, I, O> sift(SymbolQueryOracle<I, O> oracle, Word<I> prefix);
 
     // default methods for graph interface
     @Override
@@ -101,6 +101,7 @@ public interface ADTNode<S, I, O> extends RecursiveADSNode<S, I, O, ADTNode<S, I
         };
     }
 
+    @Override
     default boolean isLeaf() {
         return NodeType.LEAF_NODE == this.getNodeType();
     }

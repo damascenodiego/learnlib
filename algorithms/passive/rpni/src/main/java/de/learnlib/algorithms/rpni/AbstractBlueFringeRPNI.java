@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,8 +20,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.stream.Stream;
 
-import javax.annotation.Nonnull;
-
 import de.learnlib.api.algorithm.PassiveLearningAlgorithm;
 import de.learnlib.datastructure.pta.bluefringe.DefaultProcessingOrders;
 import de.learnlib.datastructure.pta.bluefringe.ProcessingOrder;
@@ -30,6 +28,7 @@ import de.learnlib.datastructure.pta.pta.BlueFringePTAState;
 import de.learnlib.datastructure.pta.pta.PTATransition;
 import de.learnlib.datastructure.pta.pta.RedBlueMerge;
 import net.automatalib.words.Alphabet;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Abstract base class for Blue-Fringe-RPNI algorithms.
@@ -60,7 +59,6 @@ public abstract class AbstractBlueFringeRPNI<I, D, SP, TP, M> implements Passive
     protected final Alphabet<I> alphabet;
     protected final int alphabetSize;
 
-    @Nonnull
     protected final ProcessingOrder order = DefaultProcessingOrders.CANONICAL_ORDER;
     protected boolean parallel = true;
     protected boolean deterministic;
@@ -117,12 +115,14 @@ public abstract class AbstractBlueFringeRPNI<I, D, SP, TP, M> implements Passive
         PTATransition<BlueFringePTAState<SP, TP>> qbRef;
         while ((qbRef = blue.poll()) != null) {
             BlueFringePTAState<SP, TP> qb = qbRef.getTarget();
+            assert qb != null;
 
             Stream<BlueFringePTAState<SP, TP>> stream = pta.redStatesStream();
             if (parallel) {
                 stream = stream.parallel();
             }
 
+            @SuppressWarnings("nullness") // we filter the null merges
             Stream<RedBlueMerge<SP, TP, BlueFringePTAState<SP, TP>>> filtered =
                     stream.map(qr -> tryMerge(pta, qr, qb)).filter(Objects::nonNull).filter(this::decideOnValidMerge);
 
@@ -161,9 +161,9 @@ public abstract class AbstractBlueFringeRPNI<I, D, SP, TP, M> implements Passive
      * @return a valid {@link RedBlueMerge} object representing a possible merge of {@code qb} into {@code qr}, or
      * {@code null} if the merge is impossible
      */
-    protected RedBlueMerge<SP, TP, BlueFringePTAState<SP, TP>> tryMerge(BlueFringePTA<SP, TP> pta,
-                                                                        BlueFringePTAState<SP, TP> qr,
-                                                                        BlueFringePTAState<SP, TP> qb) {
+    protected @Nullable RedBlueMerge<SP, TP, BlueFringePTAState<SP, TP>> tryMerge(BlueFringePTA<SP, TP> pta,
+                                                                                  BlueFringePTAState<SP, TP> qr,
+                                                                                  BlueFringePTAState<SP, TP> qb) {
         return pta.tryMerge(qr, qb);
     }
 

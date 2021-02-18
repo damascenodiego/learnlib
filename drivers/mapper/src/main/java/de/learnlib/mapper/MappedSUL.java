@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,7 @@ import de.learnlib.api.SUL;
 import de.learnlib.api.exception.SULException;
 import de.learnlib.mapper.api.SULMapper;
 import de.learnlib.mapper.api.SULMapper.MappedException;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class MappedSUL<AI, AO, CI, CO> implements SUL<AI, AO> {
 
@@ -28,7 +29,7 @@ public class MappedSUL<AI, AO, CI, CO> implements SUL<AI, AO> {
     private final SUL<? super CI, ? extends CO> sul;
 
     private boolean inError;
-    private AO repeatedErrorOutput;
+    private @Nullable AO repeatedErrorOutput;
 
     public MappedSUL(SULMapper<? super AI, ? extends AO, ? extends CI, ? super CO> mapper,
                      SUL<? super CI, ? extends CO> sul) {
@@ -50,8 +51,9 @@ public class MappedSUL<AI, AO, CI, CO> implements SUL<AI, AO> {
         mapper.post();
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingGenericException") //  we want to allow mapping generic RuntimeExceptions
     @Override
-    public AO step(AI in) throws SULException {
+    public AO step(AI in) {
         if (inError) {
             return repeatedErrorOutput;
         }

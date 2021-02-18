@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,26 +17,18 @@ package de.learnlib.datastructure.pta.pta;
 
 import java.awt.Color;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import net.automatalib.commons.util.comparison.CmpUtil;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-@ParametersAreNonnullByDefault
 public abstract class AbstractBlueFringePTAState<SP, TP, S extends AbstractBlueFringePTAState<SP, TP, S>>
         extends AbstractBasePTAState<SP, TP, S> implements Comparable<S> {
 
     protected boolean isCopy;
-    @Nonnull
     protected Color color = Color.WHITE;
-    @Nullable
-    protected S parent;
+    protected @Nullable S parent;
     protected int parentInput = -1;
-    @Nullable
-    protected int[] access;
+    protected int @Nullable [] access;
 
-    @Nonnull
     public Color getColor() {
         return color;
     }
@@ -65,7 +57,6 @@ public abstract class AbstractBlueFringePTAState<SP, TP, S extends AbstractBlueF
         return state;
     }
 
-    @Nonnull
     public PTATransition<S> makeBlue() {
         if (!isWhite()) {
             throw new IllegalStateException();

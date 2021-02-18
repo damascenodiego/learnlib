@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,6 @@
 
 package de.learnlib.api.statistic;
 
-import javax.annotation.Nonnull;
-
 import de.learnlib.api.oracle.Filter;
 
 /**
@@ -25,16 +23,9 @@ import de.learnlib.api.oracle.Filter;
  *
  * @param <I>
  *         input symbol class
- * @param <O>
- *         output symbol class
+ * @param <D>
+ *         output domain class
  *
  * @author falkhowar
  */
-public interface StatisticOracle<I, O> extends Filter<I, O> {
-
-    /**
-     * @return the statistical data gathered by this oracle
-     */
-    @Nonnull
-    StatisticData getStatisticalData();
-}
+public interface StatisticOracle<I, D> extends Filter<I, D>, StatisticCollector {}

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,6 @@ import java.util.Objects;
 
 import de.learnlib.algorithms.lstar.ce.ObservationTableCEXHandlers;
 import de.learnlib.api.algorithm.feature.GlobalSuffixLearner;
-import de.learnlib.api.algorithm.feature.SupportsGrowingAlphabet;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.datastructure.observationtable.GenericObservationTable;
@@ -32,6 +31,7 @@ import de.learnlib.datastructure.observationtable.OTLearner;
 import de.learnlib.datastructure.observationtable.ObservationTable;
 import de.learnlib.datastructure.observationtable.Row;
 import de.learnlib.util.MQUtil;
+import net.automatalib.SupportsGrowingAlphabet;
 import net.automatalib.automata.concepts.SuffixOutput;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
@@ -56,7 +56,7 @@ import net.automatalib.words.impl.Alphabets;
 public abstract class AbstractLStar<A, I, D>
         implements OTLearner<A, I, D>, GlobalSuffixLearner<A, I, D>, SupportsGrowingAlphabet<I> {
 
-    protected Alphabet<I> alphabet;
+    protected final Alphabet<I> alphabet;
     protected final MembershipOracle<I, D> oracle;
     protected GenericObservationTable<I, D> table;
 
@@ -114,7 +114,7 @@ public abstract class AbstractLStar<A, I, D>
     }
 
     protected List<Word<I>> initialPrefixes() {
-        return Collections.singletonList(Word.<I>epsilon());
+        return Collections.singletonList(Word.epsilon());
     }
 
     /**
@@ -228,18 +228,11 @@ public abstract class AbstractLStar<A, I, D>
     @Override
     public void addAlphabetSymbol(I symbol) {
 
-        if (this.alphabet.containsSymbol(symbol)) {
-            return;
+        if (!this.alphabet.containsSymbol(symbol)) {
+            Alphabets.toGrowingAlphabetOrThrowException(this.alphabet).addSymbol(symbol);
         }
 
         final List<List<Row<I>>> unclosed = this.table.addAlphabetSymbol(symbol, oracle);
-
-        // since we share the alphabet instance with our observation table, our alphabet might have already been updated
-        // (if it was already a GrowableAlphabet)
-        if (!this.alphabet.containsSymbol(symbol)) {
-            this.alphabet = Alphabets.withNewSymbol(this.alphabet, symbol);
-        }
-
         completeConsistentTable(unclosed, true);
     }
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,10 +18,12 @@ package de.learnlib.testsupport;
 import java.io.Serializable;
 import java.util.Random;
 
+import de.learnlib.api.Resumable;
 import de.learnlib.api.algorithm.LearningAlgorithm;
-import de.learnlib.api.algorithm.feature.ResumableLearner;
+import de.learnlib.api.oracle.EquivalenceOracle.DFAEquivalenceOracle;
 import de.learnlib.api.oracle.MembershipOracle;
-import de.learnlib.oracle.membership.SimulatorOracle;
+import de.learnlib.api.oracle.QueryAnswerer;
+import de.learnlib.oracle.equivalence.DFASimulatorEQOracle;
 import net.automatalib.automata.fsa.DFA;
 import net.automatalib.util.automata.random.RandomAutomata;
 import net.automatalib.words.Alphabet;
@@ -30,7 +32,7 @@ import net.automatalib.words.impl.Alphabets;
 /**
  * @author bainczyk
  */
-public abstract class AbstractResumableLearnerDFATest<L extends ResumableLearner<T> & LearningAlgorithm<DFA<?, Character>, Character, Boolean>, T extends Serializable>
+public abstract class AbstractResumableLearnerDFATest<L extends Resumable<T> & LearningAlgorithm<DFA<?, Character>, Character, Boolean>, T extends Serializable>
         extends AbstractResumableLearnerTest<L, DFA<?, Character>, MembershipOracle<Character, Boolean>, Character, Boolean, T> {
 
     private static final int AUTOMATON_SIZE = 50;
@@ -47,7 +49,12 @@ public abstract class AbstractResumableLearnerDFATest<L extends ResumableLearner
 
     @Override
     protected MembershipOracle<Character, Boolean> getOracle(DFA<?, Character> target) {
-        return new SimulatorOracle<>(target);
+        return ((QueryAnswerer<Character, Boolean>) target::computeSuffixOutput).asOracle();
+    }
+
+    @Override
+    protected DFAEquivalenceOracle<Character> getEquivalenceOracle(DFA<?, Character> target) {
+        return new DFASimulatorEQOracle<>(target);
     }
 
 }

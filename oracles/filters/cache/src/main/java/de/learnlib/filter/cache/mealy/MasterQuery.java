@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,7 @@ import de.learnlib.api.query.Query;
 import net.automatalib.commons.util.mappings.Mapping;
 import net.automatalib.words.Word;
 import net.automatalib.words.WordBuilder;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A "master" query. This query corresponds to a maximal input word in the batch, and all queries that constitute
@@ -38,15 +39,15 @@ import net.automatalib.words.WordBuilder;
  */
 final class MasterQuery<I, O> extends AbstractQuery<I, Word<O>> {
 
-    private final Mapping<? super O, ? extends O> errorSyms;
-    private final List<Query<I, Word<O>>> slaves;
+    private final @Nullable Mapping<? super O, ? extends O> errorSyms;
+    private final @Nullable List<Query<I, Word<O>>> slaves;
     private Word<O> answer;
 
     MasterQuery(Word<I> word) {
         this(word, (Mapping<? super O, ? extends O>) null);
     }
 
-    MasterQuery(Word<I> word, Mapping<? super O, ? extends O> errorSyms) {
+    MasterQuery(Word<I> word, @Nullable Mapping<? super O, ? extends O> errorSyms) {
         super(word);
         this.errorSyms = errorSyms;
         this.slaves = new ArrayList<>();
@@ -69,6 +70,7 @@ final class MasterQuery<I, O> extends AbstractQuery<I, Word<O>> {
 
     @Override
     public void answer(Word<O> output) {
+        assert slaves != null;
         this.answer = truncateOutput(output);
         for (Query<I, Word<O>> slave : slaves) {
             answerSlave(slave);

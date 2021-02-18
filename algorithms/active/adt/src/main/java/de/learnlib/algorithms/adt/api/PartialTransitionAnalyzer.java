@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,6 @@
  */
 package de.learnlib.algorithms.adt.api;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 /**
  * During the refinement process of the hypothesis, ADS/Ts may be computed on partially defined automata. These
  * computations may want to skip undefined transitions (as closing them results in resets, which we want to omit) and
@@ -30,13 +28,12 @@ import javax.annotation.ParametersAreNonnullByDefault;
  *
  * @author frohme
  */
-@ParametersAreNonnullByDefault
 public interface PartialTransitionAnalyzer<S, I> {
 
     /**
      * Global exception instance to avoid (unnecessary) re-instantiation.
      */
-    RuntimeException HYPOTHESIS_MODIFICATION_EXCEPTION = new HypothesisModificationException();
+    HypothesisModificationException HYPOTHESIS_MODIFICATION_EXCEPTION = new HypothesisModificationException();
 
     /**
      * Check whether the transition in question is defined or not.
@@ -63,7 +60,7 @@ public interface PartialTransitionAnalyzer<S, I> {
      *         if closing the transition (sifting in the ADT) discovered a new hypothesis state and thus potentially
      *         invalidates previously observed behavior
      */
-    void closeTransition(S state, I input) throws HypothesisModificationException;
+    void closeTransition(S state, I input);
 
     /**
      * A helper exception to interrupt computations on an invalid hypothesis. Does not record the stacktrace when thrown
@@ -71,12 +68,12 @@ public interface PartialTransitionAnalyzer<S, I> {
      */
     class HypothesisModificationException extends RuntimeException {
 
-        public HypothesisModificationException() {
+        HypothesisModificationException() {
             super(null, null, false, false);
         }
 
         @Override
-        public synchronized Throwable fillInStackTrace() {
+        public Throwable fillInStackTrace() {
             return this;
         }
 

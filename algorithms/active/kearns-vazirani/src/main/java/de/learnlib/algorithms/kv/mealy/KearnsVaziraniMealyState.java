@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,8 +19,8 @@ import java.io.Serializable;
 import java.util.List;
 
 import de.learnlib.algorithms.kv.StateInfo;
-import de.learnlib.datastructure.discriminationtree.model.AbstractWordBasedDiscriminationTree;
-import net.automatalib.automata.transout.impl.compact.CompactMealy;
+import de.learnlib.datastructure.discriminationtree.MultiDTree;
+import net.automatalib.automata.transducers.impl.compact.CompactMealy;
 import net.automatalib.words.Word;
 
 /**
@@ -36,11 +36,11 @@ import net.automatalib.words.Word;
 public class KearnsVaziraniMealyState<I, O> implements Serializable {
 
     private final CompactMealy<I, O> hypothesis;
-    private final AbstractWordBasedDiscriminationTree<I, Word<O>, StateInfo<I, Word<O>>> discriminationTree;
+    private final MultiDTree<I, Word<O>, StateInfo<I, Word<O>>> discriminationTree;
     private final List<StateInfo<I, Word<O>>> stateInfos;
 
     KearnsVaziraniMealyState(final CompactMealy<I, O> hypothesis,
-                             final AbstractWordBasedDiscriminationTree<I, Word<O>, StateInfo<I, Word<O>>> discriminationTree,
+                             final MultiDTree<I, Word<O>, StateInfo<I, Word<O>>> discriminationTree,
                              final List<StateInfo<I, Word<O>>> stateInfos) {
         this.hypothesis = hypothesis;
         this.discriminationTree = discriminationTree;
@@ -51,7 +51,7 @@ public class KearnsVaziraniMealyState<I, O> implements Serializable {
         return hypothesis;
     }
 
-    AbstractWordBasedDiscriminationTree<I, Word<O>, StateInfo<I, Word<O>>> getDiscriminationTree() {
+    MultiDTree<I, Word<O>, StateInfo<I, Word<O>>> getDiscriminationTree() {
         return discriminationTree;
     }
 

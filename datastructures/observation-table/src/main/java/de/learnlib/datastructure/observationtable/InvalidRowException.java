@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,8 +19,7 @@ public class InvalidRowException extends IllegalArgumentException {
 
     private static final long serialVersionUID = 1L;
 
-    public InvalidRowException() {
-    }
+    public InvalidRowException() {}
 
     public InvalidRowException(String s) {
         super(s);

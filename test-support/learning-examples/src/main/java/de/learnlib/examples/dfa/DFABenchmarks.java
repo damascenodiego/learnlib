@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@ import de.learnlib.examples.DefaultLearningExample.DefaultDFALearningExample;
 import de.learnlib.examples.LearningExample.DFALearningExample;
 import net.automatalib.automata.fsa.impl.compact.CompactDFA;
 import net.automatalib.serialization.learnlibv2.LearnLibV2Serialization;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,34 +34,47 @@ public final class DFABenchmarks {
         // prevent instantiation
     }
 
-    public static DFALearningExample<Integer> loadPots2() {
-        return loadLearnLibV2Benchmark("pots2");
+    public static @Nullable DFALearningExample<Integer> loadLearnLibV2Benchmark(String name) {
+        final String resourceName = "/automata/learnlibv2/" + name + ".dfa.gz";
+        final InputStream resourceStream = DFABenchmarks.class.getResourceAsStream(resourceName);
+
+        if (resourceStream == null) {
+            LOGGER.info("Couldn't find resource '{}'", resourceName);
+        } else {
+            try (InputStream is = resourceStream) {
+                CompactDFA<Integer> dfa = LearnLibV2Serialization.getInstance().readGenericDFA(is);
+                return new DefaultDFALearningExample<>(dfa);
+            } catch (IOException ex) {
+                LOGGER.error("Could not load benchmark", ex);
+            }
+        }
+
+        return null;
     }
 
-    public static DFALearningExample<Integer> loadLearnLibV2Benchmark(String name) {
-        String resourceName = "/automata/learnlibv2/" + name + ".dfa.gz";
-        if (DFABenchmarks.class.getResource(resourceName) == null) {
-            return null;
-        }
-
-        try (InputStream is = DFABenchmarks.class.getResourceAsStream(resourceName)) {
-            CompactDFA<Integer> dfa = LearnLibV2Serialization.getInstance().readGenericDFA(is);
-            return new DefaultDFALearningExample<>(dfa);
-        } catch (IOException ex) {
-            LOGGER.error("Could not load benchmark", ex);
-            return null;
-        }
+    public static DFALearningExample<Integer> loadPots2() {
+        return load("pots2");
     }
 
     public static DFALearningExample<Integer> loadPots3() {
-        return loadLearnLibV2Benchmark("pots3");
+        return load("pots3");
     }
 
     public static DFALearningExample<Integer> loadPeterson2() {
-        return loadLearnLibV2Benchmark("peterson2");
+        return load("peterson2");
     }
 
     public static DFALearningExample<Integer> loadPeterson3() {
-        return loadLearnLibV2Benchmark("peterson3");
+        return load("peterson3");
+    }
+
+    private static DFALearningExample<Integer> load(String id) {
+        final DFALearningExample<Integer> benchmark = loadLearnLibV2Benchmark(id);
+
+        if (benchmark == null) {
+            throw new IllegalStateException("Couldn't find '" + id + "'. Are the correct JARs loaded?");
+        }
+
+        return benchmark;
     }
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,21 +15,15 @@
  */
 package de.learnlib.util.mealy;
 
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.algorithm.LearningAlgorithm;
 import de.learnlib.api.query.DefaultQuery;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.words.Word;
 
-@ParametersAreNonnullByDefault
 final class MealyLearnerWrapper<M extends MealyMachine<?, I, ?, O>, I, O>
         implements LearningAlgorithm.MealyLearner<I, O> {
 
     private final LearningAlgorithm<M, I, O> learner;
-
-    private M hypothesis;
 
     MealyLearnerWrapper(LearningAlgorithm<M, I, O> learner) {
         this.learner = learner;
@@ -42,25 +36,15 @@ final class MealyLearnerWrapper<M extends MealyMachine<?, I, ?, O>, I, O>
 
     @Override
     public boolean refineHypothesis(DefaultQuery<I, Word<O>> ceQuery) {
-        if (hypothesis == null) {
-            hypothesis = learner.getHypothesisModel();
-        }
+        M hyp = learner.getHypothesisModel();
+        DefaultQuery<I, O> reducedQry = MealyUtil.reduceCounterExample(hyp, ceQuery);
 
-        DefaultQuery<I, O> reducedQry = MealyUtil.reduceCounterExample(hypothesis, ceQuery);
-
-        if (reducedQry == null) {
-            return false;
-        }
-
-        hypothesis = null;
-        return learner.refineHypothesis(reducedQry);
+        return reducedQry != null && learner.refineHypothesis(reducedQry);
     }
 
     @Override
-    @Nonnull
     public M getHypothesisModel() {
-        hypothesis = learner.getHypothesisModel();
-        return hypothesis;
+        return learner.getHypothesisModel();
     }
 
 }

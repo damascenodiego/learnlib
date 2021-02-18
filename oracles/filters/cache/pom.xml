@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Copyright (C) 2013-2018 TU Dortmund
+Copyright (C) 2013-2020 TU Dortmund
 This file is part of LearnLib, http://www.learnlib.de/.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,39 +16,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>learnlib-filters-parent</artifactId>
         <groupId>de.learnlib</groupId>
-        <version>0.13.1</version>
+        <artifactId>learnlib-filters-parent</artifactId>
+        <version>0.16.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>learnlib-cache</artifactId>
+
     <name>LearnLib :: Filters :: Cache</name>
     <description>Caches to avoid posing duplicate membership queries</description>
 
     <dependencies>
-        <!--
-        Compile-time dependencies
-        -->
-
-        <!-- LearnLib dependencies -->
+        <!-- internal -->
         <dependency>
             <groupId>de.learnlib</groupId>
             <artifactId>learnlib-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>de.learnlib</groupId>
+            <artifactId>learnlib-membership-oracles</artifactId>
+        </dependency>
 
-        <!-- AutomataLib dependencies -->
+        <!-- external -->
         <dependency>
             <groupId>net.automatalib</groupId>
             <artifactId>automata-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.automatalib</groupId>
-            <artifactId>automata-core</artifactId>
         </dependency>
         <dependency>
             <groupId>net.automatalib</groupId>
@@ -56,35 +52,36 @@ limitations under the License.
         </dependency>
         <dependency>
             <groupId>net.automatalib</groupId>
+            <artifactId>automata-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.automatalib</groupId>
             <artifactId>automata-incremental</artifactId>
         </dependency>
-
-        <!-- JSR-305 -->
         <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
+            <groupId>net.automatalib</groupId>
+            <artifactId>automata-util</artifactId>
         </dependency>
 
-
-        <!--
-        Test dependencies
-        -->
-
-        <!-- TestNG -->
         <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
+            <groupId>org.checkerframework</groupId>
+            <artifactId>checker-qual</artifactId>
         </dependency>
 
-
-        <!-- LearnLib dependencies -->
         <dependency>
-            <groupId>de.learnlib.testsupport</groupId>
-            <artifactId>learnlib-learning-examples</artifactId>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- test -->
+        <dependency>
+            <groupId>de.learnlib</groupId>
+            <artifactId>learnlib-drivers-simulator</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>de.learnlib</groupId>
-            <artifactId>learnlib-membership-oracles</artifactId>
+            <artifactId>learnlib-parallelism</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -92,6 +89,15 @@ limitations under the License.
             <artifactId>learnlib-statistics</artifactId>
             <scope>test</scope>
         </dependency>
-    </dependencies>
+        <dependency>
+            <groupId>de.learnlib</groupId>
+            <artifactId>learnlib-util</artifactId>
+            <scope>test</scope>
+        </dependency>
 
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+        </dependency>
+    </dependencies>
 </project>

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 package de.learnlib.api;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import de.learnlib.api.exception.SULException;
 
@@ -50,9 +47,11 @@ public interface SUL<I, O> {
      *         input to the SUL
      *
      * @return output of SUL
+     *
+     * @throws SULException
+     *         if the input symbol cannot be executed on the SUL
      */
-    @Nullable
-    O step(@Nullable I in) throws SULException;
+    O step(I in);
 
     /**
      * Returns whether this SUL is capable of {@link #fork() forking}.
@@ -83,8 +82,8 @@ public interface SUL<I, O> {
      * @throws UnsupportedOperationException
      *         if this SUL can't be forked.
      */
-    @Nonnull
-    default SUL<I, O> fork() throws UnsupportedOperationException {
+    default SUL<I, O> fork() {
         throw new UnsupportedOperationException();
     }
+
 }

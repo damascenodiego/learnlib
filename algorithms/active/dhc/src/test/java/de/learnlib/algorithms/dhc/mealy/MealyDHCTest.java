@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,7 @@
 package de.learnlib.algorithms.dhc.mealy;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -23,11 +24,11 @@ import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.examples.mealy.ExampleCoffeeMachine;
 import de.learnlib.examples.mealy.ExampleGrid;
 import de.learnlib.examples.mealy.ExampleStack;
-import de.learnlib.oracle.equivalence.SimulatorEQOracle;
+import de.learnlib.oracle.equivalence.MealySimulatorEQOracle;
 import de.learnlib.oracle.membership.SimulatorOracle;
 import de.learnlib.oracle.membership.SimulatorOracle.MealySimulatorOracle;
-import net.automatalib.automata.transout.MealyMachine;
-import net.automatalib.automata.transout.impl.compact.CompactMealy;
+import net.automatalib.automata.transducers.MealyMachine;
+import net.automatalib.automata.transducers.impl.compact.CompactMealy;
 import net.automatalib.util.automata.random.RandomAutomata;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
@@ -95,7 +96,7 @@ public class MealyDHCTest {
         // for this example the first hypothesis should have two states
         Assert.assertEquals(hypo.size(), 2, "Mismatch in size of learned hypothesis");
 
-        SimulatorEQOracle<ExampleStack.Input, Word<ExampleStack.Output>> eqoracle = new SimulatorEQOracle<>(fm);
+        MealySimulatorEQOracle<ExampleStack.Input, ExampleStack.Output> eqoracle = new MealySimulatorEQOracle<>(fm);
 
         DefaultQuery<ExampleStack.Input, Word<ExampleStack.Output>> cexQuery =
                 eqoracle.findCounterExample(hypo, alphabet);
@@ -128,7 +129,7 @@ public class MealyDHCTest {
         Alphabet<ExampleCoffeeMachine.Input> alphabet = cmExample.getAlphabet();
 
         SimulatorOracle<ExampleCoffeeMachine.Input, Word<String>> simoracle = new SimulatorOracle<>(fm);
-        SimulatorEQOracle<ExampleCoffeeMachine.Input, Word<String>> eqoracle = new SimulatorEQOracle<>(fm);
+        MealySimulatorEQOracle<ExampleCoffeeMachine.Input, String> eqoracle = new MealySimulatorEQOracle<>(fm);
 
         MealyDHC<ExampleCoffeeMachine.Input, String> dhc = new MealyDHC<>(alphabet, simoracle);
 
@@ -163,12 +164,12 @@ public class MealyDHCTest {
         CompactMealy<Character, String> fm = RandomAutomata.randomDeterministic(new Random(1337),
                                                                                 100,
                                                                                 inputs,
-                                                                                null,
+                                                                                Collections.emptyList(),
                                                                                 outputs,
                                                                                 new CompactMealy<>(inputs));
 
-        SimulatorOracle<Character, Word<String>> simoracle = new SimulatorOracle<>(fm);
-        SimulatorEQOracle<Character, Word<String>> eqoracle = new SimulatorEQOracle<>(fm);
+        MealySimulatorOracle<Character, String> simoracle = new MealySimulatorOracle<>(fm);
+        MealySimulatorEQOracle<Character, String> eqoracle = new MealySimulatorEQOracle<>(fm);
 
         MealyDHC<Character, String> dhc = new MealyDHC<>(inputs, simoracle);
 

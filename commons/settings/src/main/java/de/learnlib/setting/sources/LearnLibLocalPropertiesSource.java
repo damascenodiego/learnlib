@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,9 @@ package de.learnlib.setting.sources;
 
 import de.learnlib.api.setting.LearnLibSettingsSource;
 import net.automatalib.commons.util.settings.LocalFileSource;
+import org.kohsuke.MetaInfServices;
 
+@MetaInfServices(LearnLibSettingsSource.class)
 public class LearnLibLocalPropertiesSource extends LocalFileSource implements LearnLibSettingsSource {
 
     public LearnLibLocalPropertiesSource() {

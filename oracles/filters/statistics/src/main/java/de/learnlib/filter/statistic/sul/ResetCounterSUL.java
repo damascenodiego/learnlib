@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,29 +15,22 @@
  */
 package de.learnlib.filter.statistic.sul;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.SUL;
-import de.learnlib.api.exception.SULException;
 import de.learnlib.api.statistic.StatisticSUL;
 import de.learnlib.filter.statistic.Counter;
 
-@ParametersAreNonnullByDefault
 public class ResetCounterSUL<I, O> implements StatisticSUL<I, O> {
 
     private final SUL<I, O> sul;
     private final Counter counter;
 
     public ResetCounterSUL(String name, SUL<I, O> sul) {
-        this.sul = sul;
-        this.counter = new Counter(name, "resets");
+        this(new Counter(name, "Resets"), sul);
     }
 
-    private ResetCounterSUL(Counter counter, SUL<I, O> sul) {
-        this.sul = sul;
+    protected ResetCounterSUL(Counter counter, SUL<I, O> sul) {
         this.counter = counter;
+        this.sul = sul;
     }
 
     @Override
@@ -52,8 +45,7 @@ public class ResetCounterSUL<I, O> implements StatisticSUL<I, O> {
     }
 
     @Override
-    @Nullable
-    public O step(@Nullable I in) throws SULException {
+    public O step(I in) {
         return sul.step(in);
     }
 
@@ -68,7 +60,6 @@ public class ResetCounterSUL<I, O> implements StatisticSUL<I, O> {
     }
 
     @Override
-    @Nonnull
     public Counter getStatisticalData() {
         return counter;
     }

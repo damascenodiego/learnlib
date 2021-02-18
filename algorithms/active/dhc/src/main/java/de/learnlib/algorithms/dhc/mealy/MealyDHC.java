@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,26 +26,29 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 
 import com.github.misberner.buildergen.annotations.GenerateBuilder;
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
 import com.google.common.collect.Sets;
 import de.learnlib.api.AccessSequenceTransformer;
+import de.learnlib.api.Resumable;
 import de.learnlib.api.algorithm.LearningAlgorithm.MealyLearner;
 import de.learnlib.api.algorithm.feature.GlobalSuffixLearner.GlobalSuffixLearnerMealy;
-import de.learnlib.api.algorithm.feature.ResumableLearner;
-import de.learnlib.api.algorithm.feature.SupportsGrowingAlphabet;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.counterexamples.GlobalSuffixFinder;
 import de.learnlib.counterexamples.GlobalSuffixFinders;
-import net.automatalib.automata.transout.impl.compact.CompactMealy;
+import net.automatalib.SupportsGrowingAlphabet;
+import net.automatalib.automata.transducers.impl.compact.CompactMealy;
 import net.automatalib.commons.util.mappings.MapMapping;
 import net.automatalib.commons.util.mappings.MutableMapping;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 import net.automatalib.words.impl.Alphabets;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,12 +59,12 @@ public class MealyDHC<I, O> implements MealyLearner<I, O>,
                                        AccessSequenceTransformer<I>,
                                        GlobalSuffixLearnerMealy<I, O>,
                                        SupportsGrowingAlphabet<I>,
-                                       ResumableLearner<MealyDHCState<I, O>> {
+                                       Resumable<MealyDHCState<I, O>> {
 
     private static final Logger LOG = LoggerFactory.getLogger(MealyDHC.class);
     private final MembershipOracle<I, Word<O>> oracle;
-    private Alphabet<I> alphabet;
-    private LinkedHashSet<Word<I>> splitters = new LinkedHashSet<>();
+    private final Alphabet<I> alphabet;
+    private Set<Word<I>> splitters = new LinkedHashSet<>();
     private CompactMealy<I, O> hypothesis;
     private MutableMapping<Integer, QueueElement<I, O>> accessSequences;
     private final GlobalSuffixFinder<? super I, ? super Word<O>> suffixFinder;
@@ -75,7 +78,7 @@ public class MealyDHC<I, O> implements MealyLearner<I, O>,
      *         the learning membership oracle
      */
     public MealyDHC(Alphabet<I> alphabet, MembershipOracle<I, Word<O>> oracle) {
-        this(alphabet, oracle, GlobalSuffixFinders.RIVEST_SCHAPIRE, null);
+        this(alphabet, oracle, GlobalSuffixFinders.RIVEST_SCHAPIRE, Collections.emptyList());
     }
 
     /**
@@ -133,7 +136,7 @@ public class MealyDHC<I, O> implements MealyLearner<I, O>,
         for (Word<I> suf : newSuffixes) {
             if (!splitters.contains(suf)) {
                 splitters.add(suf);
-                LOG.debug("added suffix: {0}", suf);
+                LOG.debug("added suffix: {}", suf);
             }
         }
 
@@ -163,7 +166,8 @@ public class MealyDHC<I, O> implements MealyLearner<I, O>,
 
         while (!queue.isEmpty()) {
             // get element to be explored from queue
-            QueueElement<I, O> elem = queue.poll();
+            @SuppressWarnings("nullness") // false positive https://github.com/typetools/checker-framework/issues/399
+            @NonNull QueueElement<I, O> elem = queue.poll();
 
             // determine access sequence for state
             Word<I> access = assembleAccessSequence(elem);
@@ -222,7 +226,7 @@ public class MealyDHC<I, O> implements MealyLearner<I, O>,
     private void scheduleSuccessors(QueueElement<I, O> elem,
                                     Integer state,
                                     Queue<QueueElement<I, O>> queue,
-                                    List<Word<O>> sig) throws IllegalArgumentException {
+                                    List<Word<O>> sig) {
         for (int i = 0; i < alphabet.size(); ++i) {
             // retrieve I/O for transition
             I input = alphabet.getSymbol(i);
@@ -251,28 +255,30 @@ public class MealyDHC<I, O> implements MealyLearner<I, O>,
     @Override
     public void addAlphabetSymbol(I symbol) {
 
-        if (this.alphabet.containsSymbol(symbol)) {
-            return;
+        if (!this.alphabet.containsSymbol(symbol)) {
+            Alphabets.toGrowingAlphabetOrThrowException(this.alphabet).addSymbol(symbol);
         }
 
-        final Iterator<Word<I>> splitterIterator = this.splitters.iterator();
-        final LinkedHashSet<Word<I>> newSplitters = Sets.newLinkedHashSetWithExpectedSize(this.splitters.size() + 1);
+        if (!this.splitters.contains(Word.fromLetter(symbol))) {
+            final Iterator<Word<I>> splitterIterator = this.splitters.iterator();
+            final LinkedHashSet<Word<I>> newSplitters =
+                    Sets.newLinkedHashSetWithExpectedSize(this.splitters.size() + 1);
 
-        // see initial initialization of the splitters
-        for (int i = 0; i < this.alphabet.size(); i++) {
-            newSplitters.add(splitterIterator.next());
+            // see initial initialization of the splitters
+            for (int i = 0; i < this.alphabet.size() - 1; i++) {
+                newSplitters.add(splitterIterator.next());
+            }
+
+            newSplitters.add(Word.fromLetter(symbol));
+
+            while (splitterIterator.hasNext()) {
+                newSplitters.add(splitterIterator.next());
+            }
+
+            this.splitters = newSplitters;
+
+            this.startLearning();
         }
-
-        newSplitters.add(Word.fromLetter(symbol));
-
-        while (splitterIterator.hasNext()) {
-            newSplitters.add(splitterIterator.next());
-        }
-
-        this.alphabet = Alphabets.withNewSymbol(this.alphabet, symbol);
-        this.splitters = newSplitters;
-
-        this.startLearning();
     }
 
     @Override
@@ -301,26 +307,33 @@ public class MealyDHC<I, O> implements MealyLearner<I, O>,
         return canonical.equals(word);
     }
 
-    public static class BuilderDefaults {
+    public static final class BuilderDefaults {
+
+        private BuilderDefaults() {
+            // prevent instantiation
+        }
 
         public static <I, O> GlobalSuffixFinder<? super I, ? super Word<O>> suffixFinder() {
             return GlobalSuffixFinders.RIVEST_SCHAPIRE;
         }
 
         public static <I> Collection<Word<I>> initialSplitters() {
-            return null;
+            return Collections.emptyList();
         }
     }
 
     static final class QueueElement<I, O> implements Serializable {
 
-        private final Integer parentState;
-        private final QueueElement<I, O> parentElement;
-        private final I transIn;
-        private final O transOut;
+        private final @Nullable Integer parentState;
+        private final @Nullable QueueElement<I, O> parentElement;
+        private final @Nullable I transIn;
+        private final @Nullable O transOut;
         private final int depth;
 
-        private QueueElement(Integer parentState, QueueElement<I, O> parentElement, I transIn, O transOut) {
+        QueueElement(@Nullable Integer parentState,
+                     @Nullable QueueElement<I, O> parentElement,
+                     @Nullable I transIn,
+                     @Nullable O transOut) {
             this.parentState = parentState;
             this.parentElement = parentElement;
             this.transIn = transIn;

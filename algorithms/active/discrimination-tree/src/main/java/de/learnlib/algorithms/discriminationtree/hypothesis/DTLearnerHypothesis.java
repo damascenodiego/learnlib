@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,10 +23,11 @@ import java.util.List;
 import java.util.Map;
 
 import de.learnlib.api.AccessSequenceTransformer;
-import net.automatalib.automata.GrowableAlphabetAutomaton;
+import net.automatalib.SupportsGrowingAlphabet;
 import net.automatalib.automata.UniversalDeterministicAutomaton;
 import net.automatalib.automata.concepts.StateIDs;
 import net.automatalib.graphs.Graph;
+import net.automatalib.graphs.concepts.GraphViewable;
 import net.automatalib.graphs.concepts.NodeIDs;
 import net.automatalib.visualization.DefaultVisualizationHelper;
 import net.automatalib.visualization.VisualizationHelper;
@@ -52,21 +53,28 @@ public class DTLearnerHypothesis<I, O, SP, TP>
         implements UniversalDeterministicAutomaton<HState<I, O, SP, TP>, I, HTransition<I, O, SP, TP>, SP, TP>,
                    AccessSequenceTransformer<I>,
                    StateIDs<HState<I, O, SP, TP>>,
-                   GrowableAlphabetAutomaton<I>,
+                   SupportsGrowingAlphabet<I>,
+                   GraphViewable,
                    Serializable {
 
-    private Alphabet<I> alphabet;
-    private final HState<I, O, SP, TP> root;
+    private final Alphabet<I> alphabet;
+    private int alphabetSize;
+    private HState<I, O, SP, TP> root;
     private final List<HState<I, O, SP, TP>> nodes = new ArrayList<>();
 
     public DTLearnerHypothesis(Alphabet<I> alphabet) {
         this.alphabet = alphabet;
-        this.root = new HState<>(alphabet.size());
+        this.alphabetSize = this.alphabet.size();
+    }
+
+    public HState<I, O, SP, TP> createInitialState() {
+        this.root = new HState<>(alphabetSize);
         this.nodes.add(root);
+        return this.root;
     }
 
     public HState<I, O, SP, TP> createState(HTransition<I, O, SP, TP> treeIncoming) {
-        HState<I, O, SP, TP> state = new HState<>(alphabet.size(), nodes.size(), treeIncoming);
+        HState<I, O, SP, TP> state = new HState<>(alphabetSize, nodes.size(), treeIncoming);
         nodes.add(state);
         treeIncoming.makeTree(state);
         return state;
@@ -100,12 +108,17 @@ public class DTLearnerHypothesis<I, O, SP, TP>
 
     @Override
     public HState<I, O, SP, TP> getState(int id) {
+        if (id < 0 || id >= nodes.size()) {
+            throw new IndexOutOfBoundsException("No valid id");
+        }
+
         return nodes.get(id);
     }
 
     @Override
     public Word<I> transformAccessSequence(Word<I> word) {
         HState<I, O, SP, TP> state = getState(word);
+        assert state != null;
         return state.getAccessSequence();
     }
 
@@ -131,15 +144,18 @@ public class DTLearnerHypothesis<I, O, SP, TP>
     @Override
     public void addAlphabetSymbol(I symbol) {
 
-        if (this.alphabet.containsSymbol(symbol)) {
-            return;
+        if (!this.alphabet.containsSymbol(symbol)) {
+            Alphabets.toGrowingAlphabetOrThrowException(this.alphabet).addSymbol(symbol);
         }
 
-        this.alphabet = Alphabets.withNewSymbol(this.alphabet, symbol);
-        final int alphabetSize = this.alphabet.size();
+        final int newAlphabetSize = this.alphabet.size();
 
-        for (final HState<I, O, SP, TP> s : this.getStates()) {
-            s.ensureInputCapacity(alphabetSize);
+        if (alphabetSize < newAlphabetSize) {
+            for (final HState<I, O, SP, TP> s : this.getStates()) {
+                s.ensureInputCapacity(newAlphabetSize);
+            }
+
+            this.alphabetSize = newAlphabetSize;
         }
     }
 
@@ -153,6 +169,7 @@ public class DTLearnerHypothesis<I, O, SP, TP>
         return this;
     }
 
+    @Override
     public GraphView graphView() {
         return new GraphView();
     }
@@ -182,12 +199,12 @@ public class DTLearnerHypothesis<I, O, SP, TP>
 
         @Override
         public int getNodeId(HState<I, O, SP, TP> node) {
-            return node.getId();
+            return getStateId(node);
         }
 
         @Override
         public HState<I, O, SP, TP> getNode(int id) {
-            return nodes.get(id);
+            return getState(id);
         }
 
         @Override
@@ -197,15 +214,6 @@ public class DTLearnerHypothesis<I, O, SP, TP>
                 @Override
                 protected Collection<HState<I, O, SP, TP>> initialNodes() {
                     return Collections.singleton(root);
-                }
-
-                @Override
-                public boolean getNodeProperties(HState<I, O, SP, TP> node, Map<String, String> properties) {
-                    if (!super.getNodeProperties(node, properties)) {
-                        return false;
-                    }
-                    properties.put(NodeAttrs.LABEL, node.toString());
-                    return true;
                 }
 
                 @Override

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -75,11 +75,6 @@ public class ExtensibleLStarDFA<I>
               LStarDFAUtil.ensureSuffixCompliancy(initialSuffixes),
               cexHandler,
               closingStrategy);
-    }
-
-    @Override
-    protected List<Word<I>> initialSuffixes() {
-        return Collections.singletonList(Word.<I>epsilon());
     }
 
     @Override

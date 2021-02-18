@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +15,10 @@
  */
 package de.learnlib.algorithms.adt.adt;
 
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.oracle.SymbolQueryOracle;
 import net.automatalib.graphs.ads.impl.AbstractRecursiveADSSymbolNode;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Symbol node implementation.
@@ -34,7 +32,6 @@ import net.automatalib.words.Word;
  *
  * @author frohme
  */
-@ParametersAreNonnullByDefault
 public class ADTSymbolNode<S, I, O> extends AbstractRecursiveADSSymbolNode<S, I, O, ADTNode<S, I, O>>
         implements ADTNode<S, I, O> {
 
@@ -64,7 +61,7 @@ public class ADTSymbolNode<S, I, O> extends AbstractRecursiveADSSymbolNode<S, I,
 
     @Override
     public String toString() {
-        return super.getSymbol().toString();
+        return String.valueOf(super.getSymbol());
     }
 
 }

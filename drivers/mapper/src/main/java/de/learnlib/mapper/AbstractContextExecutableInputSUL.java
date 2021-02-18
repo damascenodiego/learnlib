@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,8 @@
 package de.learnlib.mapper;
 
 import de.learnlib.api.SUL;
-import de.learnlib.api.exception.SULException;
 import de.learnlib.mapper.api.ContextExecutableInput;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Abstract base class for a {@link SUL} that step-wisely executes {@link ContextExecutableInput} symbols.
@@ -36,7 +36,7 @@ import de.learnlib.mapper.api.ContextExecutableInput;
 public abstract class AbstractContextExecutableInputSUL<I extends ContextExecutableInput<? extends O, ? super C>, O, C>
         implements SUL<I, O> {
 
-    private C currentContext;
+    private @Nullable C currentContext;
 
     @Override
     public void pre() {
@@ -54,7 +54,7 @@ public abstract class AbstractContextExecutableInputSUL<I extends ContextExecuta
     protected abstract void disposeContext(C context);
 
     @Override
-    public O step(I in) throws SULException {
+    public O step(I in) {
         return in.execute(currentContext);
     }
 }

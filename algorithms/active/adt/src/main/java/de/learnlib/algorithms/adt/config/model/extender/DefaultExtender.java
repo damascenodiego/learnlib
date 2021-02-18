@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,12 +17,11 @@ package de.learnlib.algorithms.adt.config.model.extender;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import javax.annotation.ParametersAreNonnullByDefault;
 
 import de.learnlib.algorithms.adt.adt.ADTNode;
 import de.learnlib.algorithms.adt.api.ADTExtender;
@@ -39,7 +38,6 @@ import net.automatalib.words.Word;
 /**
  * @author frohme
  */
-@ParametersAreNonnullByDefault
 public class DefaultExtender implements ADTExtender {
 
     private final DefensiveADSCalculator adsCalculator;
@@ -53,7 +51,8 @@ public class DefaultExtender implements ADTExtender {
                                                                          final PartialTransitionAnalyzer<ADTState<I, O>, I> partialTransitionAnalyzer,
                                                                          final ADTNode<ADTState<I, O>, I, O> ads) {
         // cannot compute extension for root node
-        if (ads.getParent() == null) {
+        final ADTNode<ADTState<I, O>, I, O> parent = ads.getParent();
+        if (parent == null) {
             return ExtensionResult.empty();
         }
 
@@ -64,7 +63,7 @@ public class DefaultExtender implements ADTExtender {
             return ExtensionResult.empty();
         }
 
-        final Pair<Word<I>, Word<O>> parentTrace = ADTUtil.buildTraceForNode(ads.getParent());
+        final Pair<Word<I>, Word<O>> parentTrace = ADTUtil.buildTraceForNode(parent);
 
         // as long as we encounter exceptions, repeat
         while (true) {
@@ -91,7 +90,7 @@ public class DefaultExtender implements ADTExtender {
                             partialTransitionAnalyzer.closeTransition(s, input);
                         }
 
-                        if (!hypothesis.getOutput(s, input).equals(output)) {
+                        if (!Objects.equals(hypothesis.getOutput(s, input), output)) {
                             final ADTState<I, O> initial = entry.getValue();
                             final Word<I> as = initial.getAccessSequence();
                             final Word<O> asOut = hypothesis.computeOutput(as);
@@ -135,7 +134,7 @@ public class DefaultExtender implements ADTExtender {
                 }
 
                 return new ExtensionResult<>(extension);
-            } catch (PartialTransitionAnalyzer.HypothesisModificationException hme) {
+            } catch (PartialTransitionAnalyzer.HypothesisModificationException ignored) {
                 //do nothing, repeat
             }
         }

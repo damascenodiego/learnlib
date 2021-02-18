@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,27 +15,19 @@
  */
 package de.learnlib.api.statistic;
 
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 /**
  * Common interface for statistical data.
  *
  * @author falkhowar
  */
-@ParametersAreNonnullByDefault
 public interface StatisticData {
 
-    @Nonnull
     String getName();
 
-    @Nonnull
     String getUnit();
 
-    @Nonnull
     String getSummary();
 
-    @Nonnull
     String getDetails();
 }
 

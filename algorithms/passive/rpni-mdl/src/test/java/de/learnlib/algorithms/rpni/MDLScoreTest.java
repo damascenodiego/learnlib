@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,7 +42,7 @@ public class MDLScoreTest {
     private List<int[]> positiveSamplesAsIntArray;
 
     @BeforeClass
-    public void setUp() throws Exception {
+    public void setUp() {
         alphabet = Alphabets.fromArray('a', 'b');
         alphabetAsInt = Alphabets.fromArray(0, 1);
 

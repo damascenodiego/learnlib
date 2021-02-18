@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,16 +19,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import de.learnlib.datastructure.observationtable.NoSuchRowException;
 import de.learnlib.datastructure.observationtable.OTUtils;
 import de.learnlib.datastructure.observationtable.ObservationTable;
 import de.learnlib.datastructure.observationtable.Row;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 import net.automatalib.words.impl.Alphabets;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * This class represents the data structure of an {@link ObservationTable} without providing any meaningful
@@ -40,7 +37,7 @@ import net.automatalib.words.impl.Alphabets;
  * @param <D>
  *         The output domain type.
  */
-public class SimpleObservationTable<I, D> implements ObservationTable<I, D> {
+public class SimpleObservationTable<I, @Nullable D> implements ObservationTable<I, D> {
 
     final List<? extends Word<I>> suffixes;
 
@@ -48,28 +45,25 @@ public class SimpleObservationTable<I, D> implements ObservationTable<I, D> {
         this.suffixes = suffixes;
     }
 
-    @Nonnull
     @Override
     public Collection<Row<I>> getShortPrefixRows() {
         return Collections.emptyList();
     }
 
-    @Nonnull
     @Override
     public Collection<Row<I>> getLongPrefixRows() {
         return Collections.emptyList();
     }
 
-    @Nullable
+
     @Override
     public Row<I> getRow(int idx) {
-        return null;
+        throw new IndexOutOfBoundsException("This OT contains no data");
     }
 
-    @Nonnull
     @Override
-    public Row<I> getRow(Word<I> prefix) throws NoSuchRowException {
-        throw new NoSuchRowException();
+    public Row<I> getRow(Word<I> prefix) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -77,7 +71,6 @@ public class SimpleObservationTable<I, D> implements ObservationTable<I, D> {
         return 0;
     }
 
-    @Nonnull
     @Override
     public List<Word<I>> getSuffixes() {
         return Collections.unmodifiableList(suffixes);
@@ -95,7 +88,7 @@ public class SimpleObservationTable<I, D> implements ObservationTable<I, D> {
 
     @Override
     public List<D> rowContents(Row<I> row) {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override

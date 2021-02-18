@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,13 +17,12 @@ package de.learnlib.mapper.api;
 
 import java.util.Optional;
 
-import javax.annotation.Nonnull;
-
 import de.learnlib.api.Mapper;
 import de.learnlib.api.Mapper.SynchronousMapper;
 import de.learnlib.api.SUL;
 import de.learnlib.api.exception.SULException;
 import de.learnlib.mapper.SULMappers;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * An extension of the {@link Mapper} interface specifically for {@link SUL}s.
@@ -73,8 +72,7 @@ public interface SULMapper<AI, AO, CI, CO> extends SynchronousMapper<AI, AO, CI,
      * @throws UnsupportedOperationException
      *         if this mapper is not forkable
      */
-    @Nonnull
-    default SULMapper<AI, AO, CI, CO> fork() throws UnsupportedOperationException {
+    default SULMapper<AI, AO, CI, CO> fork() {
         throw new UnsupportedOperationException();
     }
 
@@ -89,7 +87,7 @@ public interface SULMapper<AI, AO, CI, CO> extends SynchronousMapper<AI, AO, CI,
      * @throws SULException
      *         if the exception cannot be mapped, or if a new exception occurs while trying to map the given exception
      */
-    default MappedException<? extends AO> mapWrappedException(SULException exception) throws SULException {
+    default MappedException<? extends AO> mapWrappedException(SULException exception) {
         return mapUnwrappedException(exception);
     }
 
@@ -116,14 +114,13 @@ public interface SULMapper<AI, AO, CI, CO> extends SynchronousMapper<AI, AO, CI,
         private final AO thisStepOutput;
         private final Optional<AO> subsequentStepsOutput;
 
-        private MappedException(AO thisStepOutput, AO subsequentStepsOutput) {
-            this.thisStepOutput = thisStepOutput;
-            this.subsequentStepsOutput = Optional.of(subsequentStepsOutput);
+        private MappedException(AO output) {
+            this(output, null);
         }
 
-        private MappedException(AO output) {
-            this.thisStepOutput = output;
-            this.subsequentStepsOutput = Optional.empty();
+        private MappedException(AO thisStepOutput, @Nullable AO subsequentStepsOutput) {
+            this.thisStepOutput = thisStepOutput;
+            this.subsequentStepsOutput = Optional.ofNullable(subsequentStepsOutput);
         }
 
         public static <AO> MappedException<AO> ignoreAndContinue(AO output) {
@@ -138,7 +135,7 @@ public interface SULMapper<AI, AO, CI, CO> extends SynchronousMapper<AI, AO, CI,
             return new MappedException<>(thisStepOutput, subsequentOutput);
         }
 
-        public static <AO> MappedException<AO> pass(SULException exception) throws SULException {
+        public static <AO> MappedException<AO> pass(SULException exception) {
             throw exception;
         }
 

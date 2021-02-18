@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +15,6 @@
  */
 package de.learnlib.api.query;
 
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import net.automatalib.words.Word;
 
 /**
@@ -31,12 +28,11 @@ import net.automatalib.words.Word;
  *
  * @author Maik Merten
  */
-@ParametersAreNonnullByDefault
 public class DefaultQuery<I, D> extends AbstractQuery<I, D> {
 
     private D output;
 
-    public DefaultQuery(Word<I> prefix, Word<I> suffix, @Nullable D output) {
+    public DefaultQuery(Word<I> prefix, Word<I> suffix, D output) {
         this(prefix, suffix);
         this.output = output;
     }
@@ -49,7 +45,7 @@ public class DefaultQuery<I, D> extends AbstractQuery<I, D> {
         super(input);
     }
 
-    public DefaultQuery(Word<I> input, @Nullable D output) {
+    public DefaultQuery(Word<I> input, D output) {
         super(input);
         this.output = output;
     }
@@ -58,7 +54,6 @@ public class DefaultQuery<I, D> extends AbstractQuery<I, D> {
         super(query);
     }
 
-    @Nullable
     public D getOutput() {
         return output;
     }
@@ -74,7 +69,7 @@ public class DefaultQuery<I, D> extends AbstractQuery<I, D> {
     }
 
     @Override
-    public void answer(@Nullable D output) {
+    public void answer(D output) {
         this.output = output;
     }
 

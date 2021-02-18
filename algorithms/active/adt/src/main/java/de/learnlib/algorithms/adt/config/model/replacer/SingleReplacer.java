@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,23 +26,20 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.algorithms.adt.adt.ADT;
 import de.learnlib.algorithms.adt.adt.ADTNode;
 import de.learnlib.algorithms.adt.api.SubtreeReplacer;
 import de.learnlib.algorithms.adt.config.model.ADSCalculator;
 import de.learnlib.algorithms.adt.model.ReplacementResult;
 import de.learnlib.algorithms.adt.util.ADTUtil;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * @author frohme
  */
-@ParametersAreNonnullByDefault
 public class SingleReplacer implements SubtreeReplacer {
 
     private final ADSCalculator adsCalculator;
@@ -67,7 +64,7 @@ public class SingleReplacer implements SubtreeReplacer {
                 }));
 
         final List<ADTNode<S, I, O>> sortedCandidates = new ArrayList<>(candidates);
-        Collections.sort(sortedCandidates, Comparator.comparingDouble(candidatesScore::get));
+        sortedCandidates.sort(Comparator.comparingDouble(candidatesScore::get));
 
         for (final ADTNode<S, I, O> node : sortedCandidates) {
             final Set<S> targetStates =

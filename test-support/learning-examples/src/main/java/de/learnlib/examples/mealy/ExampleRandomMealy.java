@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,11 @@
 package de.learnlib.examples.mealy;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Random;
 
 import de.learnlib.examples.DefaultLearningExample.DefaultMealyLearningExample;
-import net.automatalib.automata.transout.impl.compact.CompactMealy;
+import net.automatalib.automata.transducers.impl.compact.CompactMealy;
 import net.automatalib.util.automata.random.RandomAutomata;
 import net.automatalib.words.Alphabet;
 
@@ -35,7 +36,7 @@ public class ExampleRandomMealy<I, O> extends DefaultMealyLearningExample<I, O> 
         super(RandomAutomata.randomDeterministic(random,
                                                  size,
                                                  alphabet,
-                                                 null,
+                                                 Collections.emptyList(),
                                                  Arrays.asList(outputs),
                                                  new CompactMealy<>(alphabet)));
     }

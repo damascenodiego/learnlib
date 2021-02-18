@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,16 +19,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.logging.LearnLogger;
 import de.learnlib.filter.statistic.Counter;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Very rudimentary profiler.
  */
-@ParametersAreNonnullByDefault
 public final class SimpleProfiler {
 
     private static final Map<String, Counter> CUMULATED = new ConcurrentHashMap<>();
@@ -83,14 +80,13 @@ public final class SimpleProfiler {
      *
      * @return The counter for tracking the passed milliseconds of the timer
      */
-    public static Counter cumulated(String name) {
+    public static @Nullable Counter cumulated(String name) {
         return CUMULATED.get(name);
     }
 
     /**
      * Get profiling results as string.
      */
-    @Nonnull
     public static String getResults() {
         StringBuilder sb = new StringBuilder();
         for (Entry<String, Counter> e : CUMULATED.entrySet()) {

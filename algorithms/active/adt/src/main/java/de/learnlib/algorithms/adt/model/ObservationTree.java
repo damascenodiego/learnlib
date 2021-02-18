@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,15 +19,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.algorithms.adt.adt.ADTNode;
 import de.learnlib.algorithms.adt.util.ADTUtil;
-import net.automatalib.automata.transout.impl.FastMealy;
-import net.automatalib.automata.transout.impl.FastMealyState;
+import net.automatalib.automata.transducers.impl.FastMealy;
+import net.automatalib.automata.transducers.impl.FastMealyState;
 import net.automatalib.commons.util.Pair;
 import net.automatalib.util.automata.equivalence.NearLinearEquivalenceTest;
 import net.automatalib.words.Alphabet;
@@ -48,7 +47,6 @@ import net.automatalib.words.Word;
  *
  * @author frohme
  */
-@ParametersAreNonnullByDefault
 public class ObservationTree<S, I, O> {
 
     private final Alphabet<I> alphabet;
@@ -133,7 +131,7 @@ public class ObservationTree<S, I, O> {
                 nextState = this.observationTree.addState();
                 this.observationTree.addTransition(iter, nextInput, nextState, nextOuput);
             } else {
-                assert this.observationTree.getOutput(iter, nextInput).equals(nextOuput) : "Inconsistent observations";
+                assert Objects.equals(nextOuput, this.observationTree.getOutput(iter, nextInput)) : "Inconsistent observations";
                 nextState = this.observationTree.getSuccessor(iter, nextInput);
             }
 
@@ -186,7 +184,8 @@ public class ObservationTree<S, I, O> {
                 this.observationTree.getSuccessor(this.observationTree.getInitialState(), prefix);
         final FastMealyState<O> target;
 
-        if (pred.getTransition(alphabet.getSymbolIndex(sym)) == null) {
+        assert pred != null;
+        if (pred.getTransitionObject(alphabet.getSymbolIndex(sym)) == null) {
             target = this.observationTree.addState();
             this.observationTree.addTransition(pred, sym, target, output);
         } else {

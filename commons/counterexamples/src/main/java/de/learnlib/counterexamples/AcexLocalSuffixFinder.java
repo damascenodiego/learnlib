@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,7 @@ import de.learnlib.api.query.Query;
 import de.learnlib.counterexamples.acex.ClassicPrefixTransformAcex;
 import net.automatalib.automata.concepts.SuffixOutput;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Wraps a {@link AbstractNamedAcexAnalyzer}. This class is both responsible for adapting it to the standard LearnLib
@@ -31,7 +32,7 @@ import net.automatalib.words.Word;
  *
  * @author Malte Isberner
  */
-public class AcexLocalSuffixFinder implements LocalSuffixFinder<Object, Object> {
+public class AcexLocalSuffixFinder implements LocalSuffixFinder<@Nullable Object, @Nullable Object> {
 
     private final AcexAnalyzer analyzer;
     private final boolean reduce;

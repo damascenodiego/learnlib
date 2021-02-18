@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,19 +18,16 @@ package de.learnlib.algorithms.adt.config.model.calculator;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.algorithms.adt.ads.DefensiveADS;
 import de.learnlib.algorithms.adt.adt.ADTNode;
 import de.learnlib.algorithms.adt.api.PartialTransitionAnalyzer;
 import de.learnlib.algorithms.adt.config.model.DefensiveADSCalculator;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.words.Alphabet;
 
 /**
  * @author frohme
  */
-@ParametersAreNonnullByDefault
 public class BestEffortDefensiveCalculator implements DefensiveADSCalculator {
 
     @Override

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,16 +20,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import javax.annotation.Nullable;
-
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Streams;
 import de.learnlib.api.oracle.EquivalenceOracle;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
 import net.automatalib.automata.concepts.Output;
-import net.automatalib.commons.util.collections.BatchingIterator;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,9 +66,8 @@ public abstract class AbstractTestWordEQOracle<A extends Output<I, D>, I, D> imp
         this.batchSize = batchSize;
     }
 
-    @Nullable
     @Override
-    public DefaultQuery<I, D> findCounterExample(A hypothesis, Collection<? extends I> inputs) {
+    public @Nullable DefaultQuery<I, D> findCounterExample(A hypothesis, Collection<? extends I> inputs) {
         // Fail fast on empty inputs
         if (inputs.isEmpty()) {
             LOGGER.warn("Passed empty set of inputs to equivalence oracle; no counterexample can be found!");
@@ -77,7 +75,7 @@ public abstract class AbstractTestWordEQOracle<A extends Output<I, D>, I, D> imp
         }
 
         final Stream<Word<I>> testWordStream = generateTestWords(hypothesis, inputs);
-        final Stream<DefaultQuery<I, D>> queryStream = testWordStream.map(DefaultQuery<I, D>::new);
+        final Stream<DefaultQuery<I, D>> queryStream = testWordStream.map(DefaultQuery::new);
         final Stream<DefaultQuery<I, D>> answeredQueryStream = answerQueries(queryStream);
 
         final Stream<DefaultQuery<I, D>> ceStream = answeredQueryStream.filter(query -> {
@@ -108,7 +106,7 @@ public abstract class AbstractTestWordEQOracle<A extends Output<I, D>, I, D> imp
              * FIXME: currently necessary because of a bug in the JDK
              * see https://bugs.openjdk.java.net/browse/JDK-8075939
              */
-            return Streams.stream(Streams.stream(new BatchingIterator<>(stream.iterator(), this.batchSize))
+            return Streams.stream(Streams.stream(Iterators.partition(stream.iterator(), this.batchSize))
                                          .peek(membershipOracle::processQueries)
                                          .flatMap(List::stream)
                                          .iterator());

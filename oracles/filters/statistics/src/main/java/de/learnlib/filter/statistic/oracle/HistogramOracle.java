@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +17,6 @@ package de.learnlib.filter.statistic.oracle;
 
 import java.util.Collection;
 
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.Query;
 import de.learnlib.api.statistic.StatisticOracle;
@@ -35,7 +32,6 @@ import de.learnlib.filter.statistic.HistogramDataSet;
  *
  * @author falkhowar
  */
-@ParametersAreNonnullByDefault
 public class HistogramOracle<I, D> implements StatisticOracle<I, D> {
 
     /**
@@ -71,7 +67,6 @@ public class HistogramOracle<I, D> implements StatisticOracle<I, D> {
      * @return the data set collected by this oracle.
      */
     @Override
-    @Nonnull
     public final HistogramDataSet getStatisticalData() {
         return this.dataSet;
     }

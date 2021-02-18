@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 package de.learnlib.algorithms.discriminationtree.vpda;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 import de.learnlib.algorithms.discriminationtree.hypothesis.vpda.AbstractHypTrans;
 import de.learnlib.algorithms.discriminationtree.hypothesis.vpda.ContextPair;
@@ -63,7 +68,7 @@ public abstract class AbstractVPDALearner<I> implements LearningAlgorithm<OneSEV
     @Override
     public void startLearning() {
         HypLoc<I> initLoc = hypothesis.initialize();
-        DTNode<I> leaf = dtree.sift(initLoc);
+        DTNode<I> leaf = dtree.sift(initLoc.getAccessSequence());
         link(leaf, initLoc);
         initializeLocation(initLoc);
 
@@ -76,8 +81,8 @@ public abstract class AbstractVPDALearner<I> implements LearningAlgorithm<OneSEV
             return false;
         }
 
-        while (refineHypothesisSingle(ceQuery)) {
-        }
+        while (refineHypothesisSingle(ceQuery)) {}
+
         return true;
     }
 
@@ -95,8 +100,9 @@ public abstract class AbstractVPDALearner<I> implements LearningAlgorithm<OneSEV
     }
 
     protected void initializeLocation(HypLoc<I> loc) {
-        assert loc.getLeaf() != null;
-        loc.setAccepting(dtree.getRoot().subtreeLabel(loc.getLeaf()));
+        final Boolean subtreeLabel = dtree.getRoot().subtreeLabel(loc.getLeaf());
+        assert subtreeLabel != null;
+        loc.setAccepting(subtreeLabel);
 
         for (int i = 0; i < alphabet.getNumInternals(); i++) {
             I intSym = alphabet.getInternalSymbol(i);
@@ -128,16 +134,10 @@ public abstract class AbstractVPDALearner<I> implements LearningAlgorithm<OneSEV
     }
 
     protected void closeTransitions() {
-        AbstractHypTrans<I> next;
         UnorderedCollection<DTNode<I>> newStateNodes = new UnorderedCollection<>();
 
         do {
-            while ((next = openTransitions.poll()) != null) {
-                DTNode<I> newStateNode = closeTransition(next, false);
-                if (newStateNode != null) {
-                    newStateNodes.add(newStateNode);
-                }
-            }
+            newStateNodes.addAll(closeTransitions(openTransitions, false));
             if (!newStateNodes.isEmpty()) {
                 addNewStates(newStateNodes);
             }
@@ -145,22 +145,45 @@ public abstract class AbstractVPDALearner<I> implements LearningAlgorithm<OneSEV
     }
 
     /**
-     * Ensures that the specified transition points to a leaf-node. If the transition is a tree transition, this method
+     * Ensures that the specified transitions point to a leaf-node. If a transition is a tree transition, this method
      * has no effect.
+     * <p>
+     * The provided transList is consumed in this process.
+     * <p>
+     * If a transition needs sifting, the reached leaf node will be collected in the returned collection.
      *
-     * @param trans
-     *         the transition
+     * @param transList
+     *         the list of transitions
+     *
+     * @return a collection containing the reached leaves of transitions that needed sifting
      */
-    private DTNode<I> closeTransition(AbstractHypTrans<I> trans, boolean hard) {
-        if (trans.isTree()) {
-            return null;
+    private List<DTNode<I>> closeTransitions(TransList<I> transList, boolean hard) {
+
+        final List<AbstractHypTrans<I>> transToSift = new ArrayList<>(transList.size());
+
+        AbstractHypTrans<I> t;
+        while ((t = transList.poll()) != null) {
+            if (!t.isTree()) {
+                transToSift.add(t);
+            }
         }
 
-        DTNode<I> node = updateDTTarget(trans, hard);
-        if (node.isLeaf() && node.getData() == null && trans.getNextElement() == null) {
-            return node;
+        if (transToSift.isEmpty()) {
+            return Collections.emptyList();
         }
-        return null;
+
+        final Iterator<DTNode<I>> leavesIter = updateDTTargets(transToSift, hard).iterator();
+        final List<DTNode<I>> result = new ArrayList<>(transToSift.size());
+
+        for (final AbstractHypTrans<I> transition : transToSift) {
+            final DTNode<I> node = leavesIter.next();
+            if (node.isLeaf() && node.getData() == null && transition.getNextElement() == null) {
+                result.add(node);
+            }
+        }
+
+        assert !leavesIter.hasNext();
+        return result;
     }
 
     private void addNewStates(UnorderedCollection<DTNode<I>> newStateNodes) {
@@ -190,20 +213,40 @@ public abstract class AbstractVPDALearner<I> implements LearningAlgorithm<OneSEV
         initializeLocation(newLoc);
     }
 
-    protected DTNode<I> updateDTTarget(AbstractHypTrans<I> trans, boolean hard) {
-        if (trans.isTree()) {
-            return trans.getTargetNode();
+    protected List<DTNode<I>> updateDTTargets(List<AbstractHypTrans<I>> trans, boolean hard) {
+
+        final List<DTNode<I>> nodes = new ArrayList<>(trans.size());
+        final List<Word<I>> prefixes = new ArrayList<>(trans.size());
+
+        for (final AbstractHypTrans<I> t : trans) {
+            if (!t.isTree()) {
+                DTNode<I> start = t.getNonTreeTarget();
+
+                if (start == null) {
+                    t.setNonTreeTarget(dtree.getRoot());
+                    start = dtree.getRoot();
+                }
+
+                nodes.add(start);
+                prefixes.add(t.getAccessSequence());
+            }
         }
 
-        DTNode<I> start = trans.getNonTreeTarget();
-        if (start == null) {
-            trans.setNonTreeTarget(dtree.getRoot());
-            start = dtree.getRoot();
-        }
-        DTNode<I> result = dtree.sift(start, trans, hard);
-        trans.setNonTreeTarget(result);
-        result.addIncoming(trans);
+        final Iterator<DTNode<I>> leavesIter = dtree.sift(nodes, prefixes, hard).iterator();
+        final List<DTNode<I>> result = new ArrayList<>(trans.size());
 
+        for (final AbstractHypTrans<I> t : trans) {
+            if (t.isTree()) {
+                result.add(t.getTargetNode());
+            } else {
+                final DTNode<I> leaf = leavesIter.next();
+                t.setNonTreeTarget(leaf);
+                leaf.addIncoming(t);
+                result.add(leaf);
+            }
+        }
+
+        assert !leavesIter.hasNext();
         return result;
     }
 
@@ -216,10 +259,6 @@ public abstract class AbstractVPDALearner<I> implements LearningAlgorithm<OneSEV
 
     protected HypLoc<I> createLocation(AbstractHypTrans<I> trans) {
         return hypothesis.createLocation(false, trans);
-    }
-
-    protected HypLoc<I> createLocation(Word<I> as) {
-        return hypothesis.createLocation(false, as);
     }
 
     protected Boolean query(AccessSequenceProvider<I> asp, ContextPair<I> context) {

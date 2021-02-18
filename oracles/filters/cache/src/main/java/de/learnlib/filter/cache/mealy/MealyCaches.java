@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -91,6 +91,43 @@ public final class MealyCaches {
                                                                 Mapping<? super O, ? extends O> errorSyms,
                                                                 MembershipOracle<I, Word<O>> mqOracle) {
         return MealyCacheOracle.createTreeCacheOracle(alphabet, errorSyms, mqOracle);
+    }
+
+    /**
+     * Creates a cache oracle for a Mealy machine learning setup with a dynamic alphabet storage, using a tree for
+     * internal cache organization.
+     * <p>
+     * Note: Due to the dynamic alphabet storage, memory consumption of a dense tree may be higher than normal caches
+     * with a predefined alphabet. However, for sparse data, the memory consumption may be lower as only memory for the
+     * actual data of the tree is allocated.
+     *
+     * @param mqOracle
+     *         the membership oracle
+     *
+     * @return a Mealy learning cache with a tree-based implementation
+     */
+    public static <I, O> MealyCacheOracle<I, O> createDynamicTreeCache(MembershipOracle<I, Word<O>> mqOracle) {
+        return MealyCacheOracle.createDynamicTreeCacheOracle(mqOracle);
+    }
+
+    /**
+     * Creates a cache oracle for a Mealy machine learning setup with a dynamic alphabet storage, using a tree for
+     * internal cache organization.
+     * <p>
+     * Note: Due to the dynamic alphabet storage, memory consumption of a dense tree may be higher than normal caches
+     * with a predefined alphabet. However, for sparse data, the memory consumption may be lower as only memory for the
+     * actual data of the tree is allocated.
+     *
+     * @param errorSyms
+     *         a mapping for the prefix-closure filter
+     * @param mqOracle
+     *         the membership oracle
+     *
+     * @return a Mealy learning cache with a tree-based implementation
+     */
+    public static <I, O> MealyCacheOracle<I, O> createDynamicTreeCache(Mapping<? super O, ? extends O> errorSyms,
+                                                                       MembershipOracle<I, Word<O>> mqOracle) {
+        return MealyCacheOracle.createDynamicTreeCacheOracle(errorSyms, mqOracle);
     }
 
     /**

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +15,11 @@
  */
 package de.learnlib.algorithms.adt.model;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.algorithms.adt.adt.ADTNode;
 import de.learnlib.algorithms.adt.api.ADTExtender;
 import de.learnlib.api.query.DefaultQuery;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A class that describes the possible result a {@link ADTExtender} can return. Extending a parent trace can either <ul>
@@ -37,14 +36,12 @@ import net.automatalib.words.Word;
  *
  * @author frohme
  */
-@ParametersAreNonnullByDefault
 public class ExtensionResult<S, I, O> {
 
     private static final ExtensionResult<?, ?, ?> EMPTY = new ExtensionResult();
 
-    private final DefaultQuery<I, Word<O>> counterExample;
-
-    private final ADTNode<S, I, O> replacement;
+    private final @Nullable DefaultQuery<I, Word<O>> counterExample;
+    private final @Nullable ADTNode<S, I, O> replacement;
 
     private ExtensionResult() {
         this.replacement = null;
@@ -92,7 +89,7 @@ public class ExtensionResult<S, I, O> {
      *
      * @return the counterexample
      */
-    public DefaultQuery<I, Word<O>> getCounterExample() {
+    public @Nullable DefaultQuery<I, Word<O>> getCounterExample() {
         return counterExample;
     }
 
@@ -110,7 +107,7 @@ public class ExtensionResult<S, I, O> {
      *
      * @return the replacement
      */
-    public ADTNode<S, I, O> getReplacement() {
+    public @Nullable ADTNode<S, I, O> getReplacement() {
         return replacement;
     }
 }

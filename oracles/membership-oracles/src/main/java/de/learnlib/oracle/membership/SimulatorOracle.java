@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,12 +22,15 @@ import de.learnlib.api.query.Query;
 import de.learnlib.util.MQUtil;
 import net.automatalib.automata.concepts.SuffixOutput;
 import net.automatalib.automata.fsa.DFA;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.words.Word;
 
 /**
  * A membership oracle backed by an automaton. The automaton must implement the {@link SuffixOutput} concept, allowing
  * to identify a suffix part in the output (relative to a prefix/suffix subdivision in the input).
+ * <p>
+ * <b>Implementation note</b>: Under the assumption that read-operations do not alter the internal state of the
+ * automaton, this oracle is thread-safe.
  *
  * @param <I>
  *         input symbol type
@@ -57,7 +60,7 @@ public class SimulatorOracle<I, D> implements SingleQueryOracle<I, D> {
 
     @Override
     public void processQueries(Collection<? extends Query<I, D>> queries) {
-        MQUtil.answerQueriesAuto(this, queries);
+        MQUtil.answerQueries(this, queries);
     }
 
     public static class DFASimulatorOracle<I> extends SimulatorOracle<I, Boolean> implements SingleQueryOracleDFA<I> {

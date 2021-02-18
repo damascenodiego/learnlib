@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,31 +46,33 @@ public class ADTHypothesisTest {
 
         final StateIDs<ADTState<Character, Integer>> stateIds = automaton.stateIDs();
 
+        final ADTState<Character, Integer> init = automaton.getInitialState();
+        Assert.assertNotNull(init);
+
         for (int s = 0; s < automaton.size(); s++) {
             for (final Character i : alphabet) {
-                automaton.addTransition(stateIds.getState(s), i, automaton.getInitialState(), 0);
+                automaton.addTransition(stateIds.getState(s), i, init, 0);
             }
         }
 
-        Assert.assertEquals(states * alphabet.size(), automaton.getInitialState().getIncomingTransitions().size());
+        Assert.assertEquals(states * alphabet.size(), init.getIncomingTransitions().size());
 
         final ADTState<Character, Integer> s1 = stateIds.getState(1), s2 = stateIds.getState(2), s3 =
                 stateIds.getState(3);
 
         automaton.removeAllTransitions(s1);
 
-        Assert.assertEquals((states - 1) * alphabet.size(),
-                            automaton.getInitialState().getIncomingTransitions().size());
+        Assert.assertEquals((states - 1) * alphabet.size(), init.getIncomingTransitions().size());
 
         automaton.removeAllTransitions(s2, alphabet.getSymbol(0));
 
-        Assert.assertEquals((states - 1) * alphabet.size() - 1,
-                            automaton.getInitialState().getIncomingTransitions().size());
+        Assert.assertEquals((states - 1) * alphabet.size() - 1, init.getIncomingTransitions().size());
 
         automaton.addTransition(s2, alphabet.getSymbol(0), s1, 0);
 
         for (int i = 1; i < alphabet.size(); i++) {
             ADTTransition<Character, Integer> transition = automaton.getTransition(s2, alphabet.getSymbol(i));
+            Assert.assertNotNull(transition);
             transition.setTarget(s1);
         }
 

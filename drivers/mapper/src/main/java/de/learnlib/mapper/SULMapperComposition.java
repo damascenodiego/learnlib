@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,6 +29,7 @@ final class SULMapperComposition<AI, AO, ACI, CAO, CI, CO>
         super(outerMapper, innerMapper);
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingGenericException") //  we want to allow mapping generic RuntimeExceptions
     @Override
     public MappedException<? extends AO> mapWrappedException(SULException exception) {
         MappedException<? extends CAO> mappedEx;
@@ -43,8 +44,9 @@ final class SULMapperComposition<AI, AO, ACI, CAO, CI, CO>
         return mapMappedException(mappedEx);
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingGenericException") //  we want to allow mapping generic RuntimeExceptions
     @Override
-    public MappedException<? extends AO> mapUnwrappedException(RuntimeException exception) throws RuntimeException {
+    public MappedException<? extends AO> mapUnwrappedException(RuntimeException exception) {
         MappedException<? extends CAO> mappedEx;
         try {
             mappedEx = mapper2.mapUnwrappedException(exception);

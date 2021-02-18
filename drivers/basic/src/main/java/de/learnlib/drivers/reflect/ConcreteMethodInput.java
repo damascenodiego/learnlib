@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,13 +21,14 @@ import java.util.Map;
 
 import de.learnlib.api.exception.SULException;
 import de.learnlib.mapper.api.ExecutableInput;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A concrete inputs contains the information for one specific method call.
  *
  * @author falkhowar
  */
-public class ConcreteMethodInput implements ExecutableInput<Object> {
+public class ConcreteMethodInput implements ExecutableInput<@Nullable Object> {
 
     /**
      * corresponding abstract input.
@@ -59,8 +60,10 @@ public class ConcreteMethodInput implements ExecutableInput<Object> {
         return this.input.getParameters(values);
     }
 
+    // RuntimeExceptions are the type of exceptions we allow to handle, therefore we should throw them
+    @SuppressWarnings({"PMD.AvoidThrowingRawExceptionTypes", "PMD.PreserveStackTrace"})
     @Override
-    public Object execute() throws SULException {
+    public @Nullable Object execute() {
         Object out;
         try {
             Object ret = this.input.getMethod().invoke(this.target, getParameterValues());

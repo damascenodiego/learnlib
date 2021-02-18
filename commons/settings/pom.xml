@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Copyright (C) 2013-2018 TU Dortmund
+Copyright (C) 2013-2020 TU Dortmund
 This file is part of LearnLib, http://www.learnlib.de/.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,32 +16,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>learnlib-commons-parent</artifactId>
         <groupId>de.learnlib</groupId>
-        <version>0.13.1</version>
+        <artifactId>learnlib-commons-parent</artifactId>
+        <version>0.16.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>learnlib-settings</artifactId>
+
     <name>LearnLib :: Commons :: Settings</name>
     <description>A collection of utility methods to parse LearnLib specific settings</description>
 
     <dependencies>
-        <!--
-        Compile-time dependencies
-        -->
-
-        <!-- LearnLib dependencies -->
+        <!-- internal -->
         <dependency>
             <groupId>de.learnlib</groupId>
             <artifactId>learnlib-api</artifactId>
         </dependency>
 
-        <!-- AutomataLib dependencies -->
+        <!-- external -->
         <dependency>
             <groupId>net.automatalib</groupId>
             <artifactId>automata-api</artifactId>
@@ -52,9 +48,25 @@ limitations under the License.
         </dependency>
 
         <dependency>
+            <groupId>org.checkerframework</groupId>
+            <artifactId>checker-qual</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
+        <!-- build -->
+        <dependency>
+            <groupId>org.kohsuke.metainf-services</groupId>
+            <artifactId>metainf-services</artifactId>
+        </dependency>
+
+        <!-- test -->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+        </dependency>
     </dependencies>
 </project>

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,6 @@
  */
 package de.learnlib.algorithms.adt.api;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.algorithms.adt.adt.ADTNode;
 import de.learnlib.algorithms.adt.automaton.ADTHypothesis;
 import de.learnlib.algorithms.adt.automaton.ADTState;
@@ -28,7 +26,6 @@ import de.learnlib.algorithms.adt.model.ExtensionResult;
  *
  * @author frohme
  */
-@ParametersAreNonnullByDefault
 public interface ADTExtender {
 
     /**

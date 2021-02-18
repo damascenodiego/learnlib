@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,7 @@ import java.util.Map;
 
 import net.automatalib.visualization.DefaultVisualizationHelper;
 import net.automatalib.visualization.VisualizationHelper;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * {@link VisualizationHelper} implementation for the {@link ReuseTree} that renders nodes as white circles (if no
@@ -34,10 +35,15 @@ import net.automatalib.visualization.VisualizationHelper;
  *
  * @author Oliver Bauer
  */
-class ReuseTreeDotHelper<S, I, O> extends DefaultVisualizationHelper<ReuseNode<S, I, O>, ReuseEdge<S, I, O>> {
+class ReuseTreeDotHelper<S, I, O>
+        extends DefaultVisualizationHelper<@Nullable ReuseNode<S, I, O>, @Nullable ReuseEdge<S, I, O>> {
 
     @Override
-    public boolean getNodeProperties(ReuseNode<S, I, O> node, Map<String, String> properties) {
+    public boolean getNodeProperties(@Nullable ReuseNode<S, I, O> node, Map<String, String> properties) {
+        if (node == null) {
+            return false;
+        }
+
         super.getNodeProperties(node, properties);
         if (node.hasSystemStates()) {
             properties.put(NodeAttrs.COLOR, "black");
@@ -45,23 +51,27 @@ class ReuseTreeDotHelper<S, I, O> extends DefaultVisualizationHelper<ReuseNode<S
             properties.put(NodeAttrs.SHAPE, "diamond");
             properties.put("fontcolor", "white");
         }
-        // properties.put(NodeAttrs.LABEL, String.valueOf(node.getId()));
-        properties.put(NodeAttrs.LABEL, "");
+        properties.put(NodeAttrs.LABEL, String.valueOf(node.getId()));
         return true;
     }
 
     @Override
-    public boolean getEdgeProperties(ReuseNode<S, I, O> src,
-                                     ReuseEdge<S, I, O> edge,
-                                     ReuseNode<S, I, O> tgt,
+    public boolean getEdgeProperties(@Nullable ReuseNode<S, I, O> src,
+                                     @Nullable ReuseEdge<S, I, O> edge,
+                                     @Nullable ReuseNode<S, I, O> tgt,
                                      Map<String, String> properties) {
+
+        if (src == null || edge == null || tgt == null) {
+            return false;
+        }
+
         super.getEdgeProperties(src, edge, tgt, properties);
 
         final StringBuilder labelBuilder = new StringBuilder();
-        labelBuilder.append(String.valueOf(edge.getInput())).append(" / ");
+        labelBuilder.append(edge.getInput()).append(" / ");
         O output = edge.getOutput();
         if (output != null) {
-            labelBuilder.append(String.valueOf(output));
+            labelBuilder.append(output);
         }
         properties.put(EdgeAttrs.LABEL, labelBuilder.toString());
         return true;

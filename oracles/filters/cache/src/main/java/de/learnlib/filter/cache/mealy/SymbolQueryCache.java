@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,13 +15,24 @@
  */
 package de.learnlib.filter.cache.mealy;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
+import de.learnlib.api.Resumable;
+import de.learnlib.api.oracle.EquivalenceOracle;
 import de.learnlib.api.oracle.SymbolQueryOracle;
-import net.automatalib.automata.transout.impl.FastMealy;
-import net.automatalib.automata.transout.impl.FastMealyState;
+import de.learnlib.api.query.DefaultQuery;
+import de.learnlib.filter.cache.LearningCacheOracle.MealyLearningCacheOracle;
+import de.learnlib.filter.cache.mealy.SymbolQueryCache.SymbolQueryCacheState;
+import net.automatalib.automata.transducers.MealyMachine;
+import net.automatalib.automata.transducers.impl.compact.CompactMealy;
+import net.automatalib.util.automata.equivalence.NearLinearEquivalenceTest;
 import net.automatalib.words.Alphabet;
+import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A cache for a {@link SymbolQueryOracle}. Upon construction, it is provided with a delegate oracle. Queries that can
@@ -37,21 +48,20 @@ import net.automatalib.words.Alphabet;
  *
  * @author frohme
  */
-// TODO: integrate in existing LearningCache hierarchy
-public class SymbolQueryCache<I, O> implements SymbolQueryOracle<I, O> {
+public class SymbolQueryCache<I, O>
+        implements SymbolQueryOracle<I, O>, MealyLearningCacheOracle<I, O>, Resumable<SymbolQueryCacheState<I, O>> {
 
-    private final FastMealy<I, O> cache;
+    private CompactMealy<I, O> cache;
     private final SymbolQueryOracle<I, O> delegate;
 
     private final List<I> currentTrace;
-    private FastMealyState<O> currentState;
+    private Integer currentState;
     private boolean currentTraceValid;
 
     public SymbolQueryCache(final SymbolQueryOracle<I, O> delegate, final Alphabet<I> alphabet) {
         this.delegate = delegate;
-        this.cache = new FastMealy<>(alphabet);
-        this.cache.addInitialState();
-        this.currentState = this.cache.getInitialState();
+        this.cache = new CompactMealy<>(alphabet);
+        this.currentState = this.cache.addInitialState();
 
         this.currentTrace = new ArrayList<>();
         this.currentTraceValid = false;
@@ -61,10 +71,11 @@ public class SymbolQueryCache<I, O> implements SymbolQueryOracle<I, O> {
     public O query(I i) {
 
         if (this.currentTraceValid) {
-            final FastMealyState<O> succ = this.cache.getSuccessor(this.currentState, i);
+            final Integer succ = this.cache.getSuccessor(this.currentState, i);
 
             if (succ != null) {
                 final O output = this.cache.getOutput(this.currentState, i);
+                assert output != null;
                 this.currentTrace.add(i);
                 this.currentState = succ;
                 return output;
@@ -78,15 +89,15 @@ public class SymbolQueryCache<I, O> implements SymbolQueryOracle<I, O> {
 
         final O output = this.delegate.query(i);
 
-        final FastMealyState<O> nextState;
-        final FastMealyState<O> succ = this.cache.getSuccessor(this.currentState, i);
+        final Integer nextState;
+        final Integer succ = this.cache.getSuccessor(this.currentState, i);
 
         if (succ == null) {
-            final FastMealyState<O> newState = this.cache.addState();
+            final Integer newState = this.cache.addState();
             this.cache.addTransition(this.currentState, i, newState, output);
             nextState = newState;
         } else {
-            assert this.cache.getOutput(this.currentState, i).equals(output);
+            assert Objects.equals(this.cache.getOutput(this.currentState, i), output);
             nextState = succ;
         }
 
@@ -97,8 +108,53 @@ public class SymbolQueryCache<I, O> implements SymbolQueryOracle<I, O> {
 
     @Override
     public void reset() {
-        this.currentState = this.cache.getInitialState();
+        Integer init = this.cache.getInitialState();
+        assert init != null;
+        this.currentState = init;
         this.currentTrace.clear();
         this.currentTraceValid = true;
+    }
+
+    @Override
+    public EquivalenceOracle<MealyMachine<?, I, ?, O>, I, Word<O>> createCacheConsistencyTest() {
+        return this::findCounterexample;
+    }
+
+    private @Nullable DefaultQuery<I, Word<O>> findCounterexample(MealyMachine<?, I, ?, O> hypothesis,
+                                                                  Collection<? extends I> alphabet) {
+        /*
+        TODO: potential optimization: If the hypothesis has undefined transitions, but the cache doesn't, it is a clear
+        counterexample!
+         */
+        final Word<I> sepWord = NearLinearEquivalenceTest.findSeparatingWord(cache, hypothesis, alphabet, true);
+
+        if (sepWord != null) {
+            return new DefaultQuery<>(sepWord, cache.computeOutput(sepWord));
+        }
+
+        return null;
+    }
+
+    @Override
+    public SymbolQueryCacheState<I, O> suspend() {
+        return new SymbolQueryCacheState<>(cache);
+    }
+
+    @Override
+    public void resume(SymbolQueryCacheState<I, O> state) {
+        this.cache = state.getCache();
+    }
+
+    public static class SymbolQueryCacheState<I, O> implements Serializable {
+
+        private final CompactMealy<I, O> cache;
+
+        SymbolQueryCacheState(CompactMealy<I, O> cache) {
+            this.cache = cache;
+        }
+
+        CompactMealy<I, O> getCache() {
+            return cache;
+        }
     }
 }

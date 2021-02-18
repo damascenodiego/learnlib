@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,11 +19,19 @@ import java.util.Collection;
 import java.util.stream.Stream;
 
 import com.google.common.collect.Streams;
+import de.learnlib.api.oracle.EquivalenceOracle.DFAEquivalenceOracle;
+import de.learnlib.api.oracle.EquivalenceOracle.MealyEquivalenceOracle;
 import de.learnlib.api.oracle.MembershipOracle;
+import de.learnlib.api.oracle.MembershipOracle.DFAMembershipOracle;
+import de.learnlib.api.oracle.MembershipOracle.MealyMembershipOracle;
+import de.learnlib.buildtool.refinement.annotation.GenerateRefinement;
+import de.learnlib.buildtool.refinement.annotation.Generic;
+import de.learnlib.buildtool.refinement.annotation.Interface;
+import de.learnlib.buildtool.refinement.annotation.Map;
 import net.automatalib.automata.UniversalDeterministicAutomaton;
 import net.automatalib.automata.concepts.Output;
 import net.automatalib.automata.fsa.DFA;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.util.automata.conformance.WMethodTestsIterator;
 import net.automatalib.words.Word;
 
@@ -39,69 +47,87 @@ import net.automatalib.words.Word;
  *         output domain type
  *
  * @author Malte Isberner
+ * @author frohme
  */
+@GenerateRefinement(name = "DFAWMethodEQOracle",
+                    generics = "I",
+                    parentGenerics = {@Generic(clazz = DFA.class, generics = {"?", "I"}),
+                                      @Generic("I"),
+                                      @Generic(clazz = Boolean.class)},
+                    parameterMapping = @Map(from = MembershipOracle.class,
+                                            to = DFAMembershipOracle.class,
+                                            withGenerics = "I"),
+                    interfaces = @Interface(clazz = DFAEquivalenceOracle.class, generics = "I"))
+@GenerateRefinement(name = "MealyWMethodEQOracle",
+                    generics = {"I", "O"},
+                    parentGenerics = {@Generic(clazz = MealyMachine.class, generics = {"?", "I", "?", "O"}),
+                                      @Generic("I"),
+                                      @Generic(clazz = Word.class, generics = "O")},
+                    parameterMapping = @Map(from = MembershipOracle.class,
+                                            to = MealyMembershipOracle.class,
+                                            withGenerics = {"I", "O"}),
+                    interfaces = @Interface(clazz = MealyEquivalenceOracle.class, generics = {"I", "O"}))
 public class WMethodEQOracle<A extends UniversalDeterministicAutomaton<?, I, ?, ?, ?> & Output<I, D>, I, D>
         extends AbstractTestWordEQOracle<A, I, D> {
 
-    private int maxDepth;
+    private final int lookahead;
+    private final int expectedSize;
 
     /**
-     * Constructor.
+     * Constructor. Convenience method for {@link #WMethodEQOracle(MembershipOracle, int, int)} that sets {@code
+     * expectedSize} to 0.
      *
      * @param sulOracle
      *         interface to the system under learning
-     * @param maxDepth
- *         the maximum length of the "middle" part of the test cases
+     * @param lookahead
+     *         the maximum length of the "middle" part of the test cases
      */
-    public WMethodEQOracle(MembershipOracle<I, D> sulOracle, int maxDepth) {
-        this(sulOracle, maxDepth, 1);
+    public WMethodEQOracle(MembershipOracle<I, D> sulOracle, int lookahead) {
+        this(sulOracle, lookahead, 0);
     }
 
     /**
-     * Constructor.
-     *  @param sulOracle
+     * Constructor. Convenience method for {@link #WMethodEQOracle(MembershipOracle, int, int, int)} that sets {@code
+     * batchSize} to 1.
+     *
+     * @param sulOracle
      *         interface to the system under learning
-     * @param maxDepth
-     *         the maximum length of the "middle" part of the test cases
-     * @param batchSize
-     *         size of the batches sent to the membership oracle
+     * @param lookahead
+     *         the (minimal) maximum length of the "middle" part of the test cases
+     * @param expectedSize
+     *         the expected size of the system under learning
      */
-    public WMethodEQOracle(MembershipOracle<I, D> sulOracle, int maxDepth, int batchSize) {
-        super(sulOracle, batchSize);
-           this.maxDepth = maxDepth;
+    public WMethodEQOracle(MembershipOracle<I, D> sulOracle, int lookahead, int expectedSize) {
+        this(sulOracle, lookahead, expectedSize, 1);
     }
 
-    public void setMaxDepth(int maxDepth) {
-        this.maxDepth = maxDepth;
+    /**
+     * Constructor. Uses {@link Math#max(int, int) Math.max}{@code (lookahead, expectedSize - }{@link
+     * UniversalDeterministicAutomaton#size() hypothesis.size()}{@code )} to determine the maximum length of sequences,
+     * that should be appended to the transition-cover part of the test sequence to account for the fact that the system
+     * under learning may have more states than the current hypothesis.
+     *
+     * @param sulOracle
+     *         interface to the system under learning
+     * @param lookahead
+     *         the (minimal) maximum length of the "middle" part of the test cases
+     * @param expectedSize
+     *         the expected size of the system under learning
+     * @param batchSize
+     *         size of the batches sent to the membership oracle
+     *
+     * @see WMethodTestsIterator
+     */
+    public WMethodEQOracle(MembershipOracle<I, D> sulOracle, int lookahead, int expectedSize, int batchSize) {
+        super(sulOracle, batchSize);
+        this.lookahead = lookahead;
+        this.expectedSize = expectedSize;
     }
 
     @Override
     protected Stream<Word<I>> generateTestWords(A hypothesis, Collection<? extends I> inputs) {
-        return Streams.stream(new WMethodTestsIterator<>(hypothesis, inputs, maxDepth));
+        return Streams.stream(new WMethodTestsIterator<>(hypothesis,
+                                                         inputs,
+                                                         Math.max(lookahead, expectedSize - hypothesis.size())));
     }
-
-    public static class DFAWMethodEQOracle<I> extends WMethodEQOracle<DFA<?, I>, I, Boolean>
-            implements DFAEquivalenceOracle<I> {
-
-        public DFAWMethodEQOracle(MembershipOracle<I, Boolean> sulOracle, int maxDepth) {
-            super(sulOracle, maxDepth);
-        }
-
-        public DFAWMethodEQOracle(MembershipOracle<I, Boolean> sulOracle, int maxDepth, int batchSize) {
-            super(sulOracle, maxDepth, batchSize);
-        }
-    }
-
-    public static class MealyWMethodEQOracle<I, O> extends WMethodEQOracle<MealyMachine<?, I, ?, O>, I, Word<O>>
-            implements MealyEquivalenceOracle<I, O> {
-
-        public MealyWMethodEQOracle(MembershipOracle<I, Word<O>> sulOracle, int maxDepth) {
-            super(sulOracle, maxDepth);
-        }
-
-        public MealyWMethodEQOracle(MembershipOracle<I, Word<O>> sulOracle, int maxDepth, int batchSize) {
-            super(sulOracle, maxDepth, batchSize);
-        }
-    }
-
 }

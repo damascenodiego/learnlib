@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,28 +18,31 @@ package de.learnlib.drivers.reflect;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
-import java.util.Map;
 
 import de.learnlib.api.exception.SULException;
 import de.learnlib.mapper.api.SULMapper;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Basic stateless data mapper for objects.
  *
  * @author falkhowar
  */
-public class SimplePOJODataMapper implements SULMapper<MethodInput, AbstractMethodOutput, ConcreteMethodInput, Object> {
+public class SimplePOJODataMapper
+        implements SULMapper<MethodInput, MethodOutput, ConcreteMethodInput, @Nullable Object> {
 
     private final Constructor<?> initMethod;
     private final Object[] initParams;
 
-    protected Object delegate;
+    protected @Nullable Object delegate;
 
     protected SimplePOJODataMapper(Constructor<?> initMethod, Object... initParams) {
         this.initMethod = initMethod;
         this.initParams = initParams;
     }
 
+    // RuntimeExceptions are the type of exceptions we allow to handle, therefore we should throw them
+    @SuppressWarnings({"PMD.AvoidThrowingRawExceptionTypes", "PMD.PreserveStackTrace"})
     @Override
     public void pre() {
         try {
@@ -57,20 +60,19 @@ public class SimplePOJODataMapper implements SULMapper<MethodInput, AbstractMeth
     }
 
     @Override
-    public MappedException<? extends AbstractMethodOutput> mapUnwrappedException(RuntimeException exception)
-            throws RuntimeException {
-        return MappedException.repeatOutput(new Error(exception.getCause()), Unobserved.INSTANCE);
+    public MappedException<? extends MethodOutput> mapUnwrappedException(RuntimeException exception) {
+        final Throwable cause = exception.getCause();
+        return MappedException.repeatOutput(new Error(cause != null ? cause : exception), Unobserved.INSTANCE);
     }
 
     @Override
     public ConcreteMethodInput mapInput(MethodInput abstractInput) {
-        Map<String, Object> params = new HashMap<>();
-
-        return new ConcreteMethodInput(abstractInput, params, delegate);
+        assert delegate != null;
+        return new ConcreteMethodInput(abstractInput, new HashMap<>(), delegate);
     }
 
     @Override
-    public AbstractMethodOutput mapOutput(Object concreteOutput) {
+    public MethodOutput mapOutput(@Nullable Object concreteOutput) {
         return new ReturnValue(concreteOutput);
     }
 
@@ -80,7 +82,7 @@ public class SimplePOJODataMapper implements SULMapper<MethodInput, AbstractMeth
     }
 
     @Override
-    public SULMapper<MethodInput, AbstractMethodOutput, ConcreteMethodInput, Object> fork() {
+    public SULMapper<MethodInput, MethodOutput, ConcreteMethodInput, @Nullable Object> fork() {
         return new SimplePOJODataMapper(initMethod, initParams);
     }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 package de.learnlib.datastructure.observationtable;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * A description of an inconsistency in an {@link GenericObservationTable}. An inconsistency consists of two short
@@ -45,7 +42,6 @@ public class Inconsistency<I> {
      *
      * @return the first row
      */
-    @Nonnull
     public Row<I> getFirstRow() {
         return firstRow;
     }
@@ -55,7 +51,6 @@ public class Inconsistency<I> {
      *
      * @return the second row
      */
-    @Nonnull
     public Row<I> getSecondRow() {
         return secondRow;
     }
@@ -65,7 +60,6 @@ public class Inconsistency<I> {
      *
      * @return the symbol
      */
-    @Nullable
     public I getSymbol() {
         return symbol;
     }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import net.automatalib.words.Word;
+import org.checkerframework.checker.initialization.qual.UnknownInitialization;
 
 public abstract class AbstractObservationTableWriter<I, D> implements ObservationTableWriter<I, D> {
 
@@ -42,7 +43,8 @@ public abstract class AbstractObservationTableWriter<I, D> implements Observatio
         return Objects::toString;
     }
 
-    public void setWordToString(Function<? super Word<? extends I>, ? extends String> wordToString) {
+    public void setWordToString(@UnknownInitialization(AbstractObservationTableWriter.class) AbstractObservationTableWriter<I, D> this,
+                                Function<? super Word<? extends I>, ? extends String> wordToString) {
         this.wordToString = safeToStringFunction(wordToString);
     }
 

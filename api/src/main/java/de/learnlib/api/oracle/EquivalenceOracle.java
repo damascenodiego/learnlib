@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,13 +17,11 @@ package de.learnlib.api.oracle;
 
 import java.util.Collection;
 
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.query.DefaultQuery;
 import net.automatalib.automata.fsa.DFA;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * An equivalence oracle, which checks hypothesis automata against the (possibly unknown) system under learning (SUL).
@@ -33,7 +31,7 @@ import net.automatalib.words.Word;
  * <p>
  * <b>CAVEAT:</b> Equivalence oracles serve as an abstraction to tackle the (generally undecidable) problem of black-box
  * equivalence testing. The contract imposed by this interface is that results returned by the {@link
- * #findCounterExample(Object, Collection)} method are in fact counterexamples, <b>BUT</b> a <tt>null</tt> result
+ * #findCounterExample(Object, Collection)} method are in fact counterexamples, <b>BUT</b> a {@code null} result
  * signalling no counterexample was found does <b>not</b> mean that there can be none.
  *
  * @param <A>
@@ -46,25 +44,23 @@ import net.automatalib.words.Word;
  * @author Maik Merten
  * @author Malte Isberner
  */
-@ParametersAreNonnullByDefault
 public interface EquivalenceOracle<A, I, D> {
 
     /**
      * Searches for a counterexample disproving the subjected hypothesis. A counterexample is query which, when
      * performed on the SUL, yields a different output than what was predicted by the hypothesis. If no counterexample
-     * could be found (this does not necessarily mean that none exists), <code>null</code> is returned.
+     * could be found (this does not necessarily mean that none exists), {@code null} is returned.
      *
      * @param hypothesis
      *         the conjecture
      * @param inputs
      *         the set of inputs to consider, this should be a subset of the input alphabet of the provided hypothesis
      *
-     * @return a query exposing different behavior, or <tt>null</tt> if no counterexample could be found. In case a
-     * non-<tt>null</tt> value is returned, the output field in the {@link DefaultQuery} contains the SUL output for the
+     * @return a query exposing different behavior, or {@code null} if no counterexample could be found. In case a
+     * non-{@code null} value is returned, the output field in the {@link DefaultQuery} contains the SUL output for the
      * respective query.
      */
-    @Nullable
-    DefaultQuery<I, D> findCounterExample(A hypothesis, Collection<? extends I> inputs);
+    @Nullable DefaultQuery<I, D> findCounterExample(A hypothesis, Collection<? extends I> inputs);
 
     /**
      * A specialization of the {@link EquivalenceOracle} interface for a DFA learning scenario.

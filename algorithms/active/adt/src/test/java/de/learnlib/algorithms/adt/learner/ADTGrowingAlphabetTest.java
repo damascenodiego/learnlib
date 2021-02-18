@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,9 @@
 package de.learnlib.algorithms.adt.learner;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Random;
+import java.util.function.Consumer;
 
 import de.learnlib.algorithms.adt.config.ADTExtenders;
 import de.learnlib.algorithms.adt.config.LeafSplitters;
@@ -25,7 +27,7 @@ import de.learnlib.api.oracle.SymbolQueryOracle;
 import de.learnlib.driver.util.MealySimulatorSUL;
 import de.learnlib.oracle.membership.SULSymbolQueryOracle;
 import de.learnlib.testsupport.AbstractGrowingAlphabetTest;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.util.automata.random.RandomAutomata;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
@@ -65,6 +67,14 @@ public class ADTGrowingAlphabetTest
                                 LeafSplitters.DEFAULT_SPLITTER,
                                 ADTExtenders.NOP,
                                 SubtreeReplacers.NEVER_REPLACE);
+    }
+
+    @Override
+    protected SymbolQueryOracle<Integer, Character> getCachedOracle(Alphabet<Integer> alphabet,
+                                                                    SymbolQueryOracle<Integer, Character> original,
+                                                                    List<Consumer<Integer>> symbolListener) {
+        // ADT learner already uses a cache internally.
+        return original;
     }
 
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,14 @@
 package de.learnlib.algorithms.adt.util;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-
-import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.Objects;
 
 import de.learnlib.algorithms.adt.model.ObservationTree;
 import de.learnlib.api.oracle.SymbolQueryOracle;
-import net.automatalib.automata.transout.impl.FastMealy;
-import net.automatalib.automata.transout.impl.FastMealyState;
+import net.automatalib.automata.transducers.impl.FastMealy;
+import net.automatalib.automata.transducers.impl.FastMealyState;
 
 /**
  * A utility class that links an observation tree with a symbol query oracle, meaning that all queries to the symbol
@@ -37,7 +37,6 @@ import net.automatalib.automata.transout.impl.FastMealyState;
  *
  * @author frohme
  */
-@ParametersAreNonnullByDefault
 public class SQOOTBridge<I, O> implements SymbolQueryOracle<I, O> {
 
     private final FastMealy<I, O> observationTree;
@@ -58,7 +57,7 @@ public class SQOOTBridge<I, O> implements SymbolQueryOracle<I, O> {
         this.observationTree = observationTree.getObservationTree();
         this.delegate = delegate;
         this.enableCache = enableCache;
-        this.currentTrace = new ArrayList<>();
+        this.currentTrace = enableCache ? new ArrayList<>() : Collections.emptyList();
     }
 
     public void initialize() {
@@ -94,10 +93,13 @@ public class SQOOTBridge<I, O> implements SymbolQueryOracle<I, O> {
 
         if (succ == null) {
             final FastMealyState<O> newState = this.observationTree.addState();
-            this.observationTree.addTransition(this.currentState, i, newState, output);
             nextState = newState;
+
+            if (this.enableCache) {
+                this.observationTree.addTransition(this.currentState, i, newState, output);
+            }
         } else {
-            assert this.observationTree.getOutput(this.currentState, i).equals(output) : "Inconsistent observations";
+            assert Objects.equals(output, this.observationTree.getOutput(this.currentState, i)) : "Inconsistent observations";
             nextState = succ;
         }
 

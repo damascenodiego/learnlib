@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +15,6 @@
  */
 package de.learnlib.util.nfa;
 
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.algorithm.LearningAlgorithm;
 import de.learnlib.api.query.DefaultQuery;
 import net.automatalib.automata.fsa.NFA;
@@ -25,12 +22,9 @@ import net.automatalib.automata.fsa.impl.compact.CompactDFA;
 import net.automatalib.util.automata.fsa.NFAs;
 import net.automatalib.words.Alphabet;
 
-@ParametersAreNonnullByDefault
 public class NFALearnerWrapper<I> implements LearningAlgorithm.DFALearner<I> {
 
-    @Nonnull
     private final Alphabet<I> alphabet;
-    @Nonnull
     private final LearningAlgorithm<? extends NFA<?, I>, I, Boolean> nfaLearner;
 
     public NFALearnerWrapper(Alphabet<I> alphabet, LearningAlgorithm<? extends NFA<?, I>, I, Boolean> nfaLearner) {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,7 @@ package de.learnlib.algorithms.discriminationtree.hypothesis.vpda;
 import java.util.Iterator;
 import java.util.Map;
 
-import de.learnlib.datastructure.discriminationtree.iterators.TransformingLeavesIterator;
+import de.learnlib.datastructure.discriminationtree.iterators.DiscriminationTreeIterators;
 import de.learnlib.datastructure.discriminationtree.model.AbstractTemporaryIntrusiveDTNode;
 import de.learnlib.datastructure.discriminationtree.model.BooleanMap;
 import de.learnlib.datastructure.list.IntrusiveListElem;
@@ -60,7 +60,7 @@ public class DTNode<I>
     }
 
     public Iterator<HypLoc<I>> subtreeLocsIterator() {
-        return new TransformingLeavesIterator<>(this, DTNode::getData);
+        return DiscriminationTreeIterators.transformingLeafIterator(this, DTNode::getData);
     }
 
     public Iterable<HypLoc<I>> subtreeLocations() {

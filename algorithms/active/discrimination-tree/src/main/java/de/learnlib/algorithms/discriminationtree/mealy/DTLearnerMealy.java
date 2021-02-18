@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,9 +26,10 @@ import de.learnlib.api.query.AbstractQuery;
 import de.learnlib.api.query.Query;
 import de.learnlib.counterexamples.LocalSuffixFinder;
 import de.learnlib.datastructure.discriminationtree.MultiDTree;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * @param <I>
@@ -68,7 +69,7 @@ public class DTLearnerMealy<I, O> extends AbstractDTLearner<MealyMachine<?, I, ?
     }
 
     @Override
-    protected Query<I, Word<O>> spQuery(HState<I, Word<O>, Void, O> state) {
+    protected @Nullable Query<I, Word<O>> spQuery(HState<I, Word<O>, Void, O> state) {
         return null;
     }
 

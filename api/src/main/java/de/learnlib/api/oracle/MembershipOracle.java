@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,8 +18,7 @@ package de.learnlib.api.oracle;
 import java.util.Collection;
 import java.util.Collections;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
+import de.learnlib.api.oracle.parallelism.BatchProcessor;
 import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.api.query.Query;
 import net.automatalib.words.Word;
@@ -34,8 +33,7 @@ import net.automatalib.words.Word;
  * @author Maik Merten
  * @see DefaultQuery
  */
-@ParametersAreNonnullByDefault
-public interface MembershipOracle<I, D> extends QueryAnswerer<I, D> {
+public interface MembershipOracle<I, D> extends QueryAnswerer<I, D>, BatchProcessor<Query<I, D>> {
 
     @Override
     default D answerQuery(Word<I> input) {
@@ -81,7 +79,23 @@ public interface MembershipOracle<I, D> extends QueryAnswerer<I, D> {
         return this;
     }
 
+    @Override
+    default void processBatch(Collection<? extends Query<I, D>> batch) {
+        processQueries(batch);
+    }
+
     interface DFAMembershipOracle<I> extends MembershipOracle<I, Boolean> {}
 
+    /**
+     * A specialization of the {@link MembershipOracle} that binds the output domain to {@link Word}s of the specified
+     * output type. Queries should be answered according to the Mealy output semantics (transition-based). This means an
+     * input sequence of length {@code n} results in an output word of length {@code n}.
+     *
+     * @param <I>
+     *         input symbol type
+     * @param <O>
+     *         output symbol type
+     */
     interface MealyMembershipOracle<I, O> extends MembershipOracle<I, Word<O>> {}
+
 }

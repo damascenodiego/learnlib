@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,11 +15,8 @@
  */
 package de.learnlib.api;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import net.automatalib.words.Word;
 
-@ParametersAreNonnullByDefault
 public interface AccessSequenceTransformer<I> {
 
     Word<I> transformAccessSequence(Word<I> word);

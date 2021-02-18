@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,14 @@
  */
 package de.learnlib.api.query;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.util.Objects;
 
 import de.learnlib.api.algorithm.LearningAlgorithm;
 import de.learnlib.api.oracle.MembershipOracle;
 import net.automatalib.automata.fsa.DFA;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A query is the basic form of interaction between a {@link LearningAlgorithm learner} and a {@link MembershipOracle
@@ -75,9 +75,10 @@ public abstract class Query<I, D> {
      * throwing an exception.
      *
      * @param output
-     *         the output, i.e., the response to the query
+     *         the output, i.e., the directly observable response to the query's suffix (cf. {@link Query main
+     *         documentation})
      */
-    public abstract void answer(@Nullable D output);
+    public abstract void answer(D output);
 
     /**
      * Retrieves the input word of this query. The input word corresponding to a query is the concatenation of its
@@ -85,7 +86,6 @@ public abstract class Query<I, D> {
      *
      * @return the input word of this query
      */
-    @Nonnull
     public Word<I> getInput() {
         return getPrefix().concat(getSuffix());
     }
@@ -96,7 +96,6 @@ public abstract class Query<I, D> {
      *
      * @return the prefix of this query
      */
-    @Nonnull
     public abstract Word<I> getPrefix();
 
     /**
@@ -105,7 +104,6 @@ public abstract class Query<I, D> {
      *
      * @return the suffix of this query
      */
-    @Nonnull
     public abstract Word<I> getSuffix();
 
     @Override
@@ -114,37 +112,23 @@ public abstract class Query<I, D> {
             return hashCode;
         }
 
-        Word<I> prefix = getPrefix(), suffix = getSuffix();
-        hashCode = 5;
-        hashCode = 89 * hashCode + prefix.hashCode();
-        hashCode = 89 * hashCode + suffix.hashCode();
+        hashCode = 1;
+        hashCode = 31 * hashCode + Objects.hashCode(getPrefix());
+        hashCode = 31 * hashCode + Objects.hashCode(getSuffix());
         return hashCode;
     }
 
     @Override
-    public final boolean equals(Object o) {
-        if (o == null) {
-            return false;
-        }
+    public final boolean equals(@Nullable Object o) {
         if (this == o) {
             return true;
         }
         if (!(o instanceof Query)) {
             return false;
         }
-        Query<?, ?> other = (Query<?, ?>) o;
 
-        Word<I> thisPref = getPrefix();
-        Word<?> otherPref = other.getPrefix();
-
-        if (thisPref != otherPref && !thisPref.equals(otherPref)) {
-            return false;
-        }
-
-        Word<I> thisSuff = getSuffix();
-        Word<?> otherSuff = other.getSuffix();
-
-        return thisSuff == otherSuff || thisSuff.equals(otherSuff);
+        final Query<?, ?> that = (Query<?, ?>) o;
+        return Objects.equals(getPrefix(), that.getPrefix()) && Objects.equals(getSuffix(), that.getSuffix());
     }
 
     /**

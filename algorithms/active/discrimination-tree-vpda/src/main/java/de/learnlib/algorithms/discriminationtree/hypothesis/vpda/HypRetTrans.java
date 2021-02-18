@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,11 +25,6 @@ public class HypRetTrans<I> extends AbstractHypTrans<I> {
 
     public HypRetTrans(HypLoc<I> src, I retSym, I callSym, HypLoc<I> stackLoc) {
         super(stackLoc.getAccessSequence().append(callSym).concat(src.getAccessSequence().append(retSym)));
-    }
-
-    @Override
-    public boolean isInternal() {
-        return false;
     }
 
 }

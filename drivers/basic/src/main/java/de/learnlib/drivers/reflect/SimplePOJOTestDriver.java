@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,8 @@ import de.learnlib.drivers.api.TestDriver;
 import net.automatalib.commons.util.ReflectUtil;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.GrowingAlphabet;
-import net.automatalib.words.impl.SimpleAlphabet;
+import net.automatalib.words.impl.GrowingMapAlphabet;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Simple test driver for plain java objects. Uses a very simple data mapper without state or storage. Inputs cannot
@@ -32,9 +33,9 @@ import net.automatalib.words.impl.SimpleAlphabet;
  * @author falkhowar
  */
 public final class SimplePOJOTestDriver
-        extends TestDriver<MethodInput, AbstractMethodOutput, ConcreteMethodInput, Object> {
+        extends TestDriver<MethodInput, MethodOutput, ConcreteMethodInput, @Nullable Object> {
 
-    private final GrowingAlphabet<MethodInput> inputs = new SimpleAlphabet<>();
+    private final GrowingAlphabet<MethodInput> inputs = new GrowingMapAlphabet<>();
 
     private final Class<?> instanceClass;
 

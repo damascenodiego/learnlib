@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,15 +18,11 @@ package de.learnlib.filter.statistic;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 /**
  * simple counter.
  *
  * @author falkhowar
  */
-@ParametersAreNonnullByDefault
 public class Counter extends AbstractStatisticData {
 
     private final AtomicLong count = new AtomicLong(0L);
@@ -48,19 +44,16 @@ public class Counter extends AbstractStatisticData {
     }
 
     @Override
-    @Nonnull
     public String toString() {
         return getDetails();
     }
 
     @Override
-    @Nonnull
     public String getSummary() {
         return getName() + " [" + getUnit() + "]: " + count;
     }
 
     @Override
-    @Nonnull
     public String getDetails() {
         return getSummary();
     }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,12 +19,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.Query;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Word-to-Symbol-Oracle adapter.
@@ -39,8 +37,7 @@ import net.automatalib.words.Word;
  *
  * @author Malte Isberner
  */
-@ParametersAreNonnullByDefault
-final class SymbolOracleWrapper<I, O> implements MembershipOracle<I, O> {
+final class SymbolOracleWrapper<I, O> implements MembershipOracle<I, @Nullable O> {
 
     private final MembershipOracle<I, Word<O>> wordOracle;
 
@@ -55,21 +52,20 @@ final class SymbolOracleWrapper<I, O> implements MembershipOracle<I, O> {
     }
 
     @Override
-    public void processQueries(Collection<? extends Query<I, O>> queries) {
+    public void processQueries(Collection<? extends Query<I, @Nullable O>> queries) {
         List<LastSymbolQuery<I, O>> lsQueries = new ArrayList<>(queries.size());
-        for (Query<I, O> qry : queries) {
+        for (Query<I, @Nullable O> qry : queries) {
             lsQueries.add(new LastSymbolQuery<>(qry));
         }
 
         wordOracle.processQueries(lsQueries);
     }
 
-    @ParametersAreNonnullByDefault
     private static final class LastSymbolQuery<I, O> extends Query<I, Word<O>> {
 
-        private final Query<I, O> originalQuery;
+        private final Query<I, @Nullable O> originalQuery;
 
-        LastSymbolQuery(Query<I, O> originalQuery) {
+        LastSymbolQuery(Query<I, @Nullable O> originalQuery) {
             this.originalQuery = originalQuery;
         }
 
@@ -82,13 +78,11 @@ final class SymbolOracleWrapper<I, O> implements MembershipOracle<I, O> {
         }
 
         @Override
-        @Nonnull
         public Word<I> getPrefix() {
             return originalQuery.getPrefix();
         }
 
         @Override
-        @Nonnull
         public Word<I> getSuffix() {
             return originalQuery.getSuffix();
         }

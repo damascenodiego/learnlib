@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,7 +27,7 @@ import net.automatalib.automata.UniversalDeterministicAutomaton;
 import net.automatalib.automata.concepts.DetSuffixOutputAutomaton;
 import net.automatalib.automata.concepts.Output;
 import net.automatalib.automata.fsa.impl.compact.CompactDFA;
-import net.automatalib.automata.transout.impl.compact.CompactMealy;
+import net.automatalib.automata.transducers.impl.compact.CompactMealy;
 import net.automatalib.exception.UndefinedPropertyAccessException;
 import net.automatalib.words.Alphabet;
 import org.testng.Assert;
@@ -36,18 +36,18 @@ import org.testng.annotations.Test;
 public class EmptyAutomatonOracleTest {
 
     @Test
-    public void testEmptyDFA() throws Exception {
+    public void testEmptyDFA() {
         testEmptyAutomaton(ExamplePaulAndMary.createExample(), new CompactDFA.Creator<>());
     }
 
     @Test
-    public void testEmptyMealy() throws Exception {
+    public void testEmptyMealy() {
         Assert.assertThrows(UndefinedPropertyAccessException.class,
                             () -> testEmptyAutomaton(ExampleStack.createExample(), new CompactMealy.Creator<>()));
     }
 
     private <I, D, A extends DetSuffixOutputAutomaton<?, I, ?, D> & UniversalDeterministicAutomaton<?, I, ?, ?, ?>> void testEmptyAutomaton(
-            LearningExample<I, D, A> example,
+            LearningExample<I, A> example,
             AutomatonCreator<? extends A, I> emptyCreator) {
 
         final A automaton = example.getReferenceAutomaton();

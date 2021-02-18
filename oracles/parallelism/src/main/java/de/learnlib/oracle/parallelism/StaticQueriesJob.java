@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,36 +17,28 @@ package de.learnlib.oracle.parallelism;
 
 import java.util.Collection;
 
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import de.learnlib.api.oracle.MembershipOracle;
-import de.learnlib.api.query.Query;
+import de.learnlib.api.oracle.parallelism.BatchProcessor;
 
 /**
- * A queries job that maintains a fixed reference to a membership oracle, executes queries using this oracle regardless
- * of the executing thread.
+ * A queries job that maintains a fixed reference to a {@link BatchProcessor}, executes queries using this oracle
+ * regardless of the executing thread.
  *
- * @param <I>
- *         input symbol type
- * @param <D>
- *         output type
+ * @param <Q>
+ *         query type
  *
  * @author Malte Isberner
  */
-@ParametersAreNonnullByDefault
-final class StaticQueriesJob<I, D> extends AbstractQueriesJob<I, D> {
+final class StaticQueriesJob<Q> extends AbstractQueriesJob<Q> {
 
-    @Nonnull
-    private final MembershipOracle<I, D> oracle;
+    private final BatchProcessor<Q> oracle;
 
-    StaticQueriesJob(Collection<? extends Query<I, D>> queries, MembershipOracle<I, D> oracle) {
+    StaticQueriesJob(Collection<? extends Q> queries, BatchProcessor<Q> oracle) {
         super(queries);
         this.oracle = oracle;
     }
 
     @Override
-    protected MembershipOracle<I, D> getOracle() {
+    protected BatchProcessor<Q> getOracle() {
         return oracle;
     }
 

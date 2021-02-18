@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,12 @@
 package de.learnlib.acex.impl;
 
 import de.learnlib.acex.AbstractCounterexample;
-import net.automatalib.commons.util.array.RichArray;
+import net.automatalib.commons.smartcollections.ArrayStorage;
+import org.checkerframework.checker.initialization.qual.UnknownInitialization;
 
 public abstract class AbstractBaseCounterexample<E> implements AbstractCounterexample<E> {
 
-    private final RichArray<E> values;
+    private final ArrayStorage<E> values;
 
     /**
      * Constructor.
@@ -29,7 +30,7 @@ public abstract class AbstractBaseCounterexample<E> implements AbstractCounterex
      *         length of the counterexample
      */
     public AbstractBaseCounterexample(int m) {
-        this.values = new RichArray<>(m);
+        this.values = new ArrayStorage<>(m);
     }
 
     /**
@@ -39,9 +40,10 @@ public abstract class AbstractBaseCounterexample<E> implements AbstractCounterex
      */
     @Override
     public int getLength() {
-        return values.length;
+        return values.size();
     }
 
+    @Override
     public E effect(int index) {
         E eff = values.get(index);
         if (eff == null) {
@@ -53,13 +55,15 @@ public abstract class AbstractBaseCounterexample<E> implements AbstractCounterex
 
     protected abstract E computeEffect(int index);
 
-    public void setEffect(int index, E effect) {
+    public void setEffect(@UnknownInitialization(AbstractBaseCounterexample.class) AbstractBaseCounterexample<E> this,
+                          int index,
+                          E effect) {
         values.set(index, effect);
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(values.length);
+        StringBuilder sb = new StringBuilder(values.size());
 
         boolean first = true;
         for (E v : values) {

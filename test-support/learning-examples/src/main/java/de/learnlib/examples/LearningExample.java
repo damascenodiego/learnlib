@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,20 +16,34 @@
 package de.learnlib.examples;
 
 import net.automatalib.automata.UniversalAutomaton;
-import net.automatalib.automata.concepts.SuffixOutput;
 import net.automatalib.automata.fsa.DFA;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
+import net.automatalib.automata.transducers.StateLocalInputMealyMachine;
 import net.automatalib.words.Alphabet;
-import net.automatalib.words.Word;
 
-public interface LearningExample<I, D, A extends UniversalAutomaton<?, I, ?, ?, ?> & SuffixOutput<I, D>> {
+public interface LearningExample<I, A extends UniversalAutomaton<?, I, ?, ?, ?>> {
 
     A getReferenceAutomaton();
 
     Alphabet<I> getAlphabet();
 
-    interface DFALearningExample<I> extends LearningExample<I, Boolean, DFA<?, I>> {}
+    interface DFALearningExample<I> extends LearningExample<I, DFA<?, I>> {}
 
-    interface MealyLearningExample<I, O> extends LearningExample<I, Word<O>, MealyMachine<?, I, ?, O>> {}
+    interface MealyLearningExample<I, O> extends LearningExample<I, MealyMachine<?, I, ?, O>> {}
+
+    /**
+     * A {@link LearningExample} refinement for {@link StateLocalInputMealyMachine}.
+     * <p>
+     * Note that while {@link StateLocalInputMealyMachine}s can return information about their {@link
+     * StateLocalInputMealyMachine#getLocalInputs local inputs} and are therefore in general partially defined, the
+     * examples are total {@link MealyMachine}s in order to be usable with the existing integration-test infrastructure
+     * of (total) {@link MealyMachine}s. The 'undefined' transitions are answered with {@link #getUndefinedOutput()}.
+     */
+    interface StateLocalInputMealyLearningExample<I, O>
+            extends LearningExample<I, StateLocalInputMealyMachine<?, I, ?, O>> {
+
+        O getUndefinedOutput();
+
+    }
 
 }

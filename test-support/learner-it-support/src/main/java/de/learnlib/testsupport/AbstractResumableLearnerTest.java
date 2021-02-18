@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,24 +21,36 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
+import de.learnlib.api.Resumable;
 import de.learnlib.api.algorithm.LearningAlgorithm;
-import de.learnlib.api.algorithm.feature.ResumableLearner;
+import de.learnlib.api.oracle.EquivalenceOracle;
 import de.learnlib.api.query.DefaultQuery;
 import net.automatalib.automata.UniversalDeterministicAutomaton;
-import net.automatalib.automata.concepts.Output;
 import net.automatalib.util.automata.Automata;
 import net.automatalib.words.Alphabet;
-import net.automatalib.words.Word;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /**
- * Test class that checks the workflow of a learning algorithm that implements {@link ResumableLearner}.
+ * Test class that checks the workflow of a learning algorithm that implements {@link Resumable}.
+ *
+ * @param <L>
+ *         learner type
+ * @param <M>
+ *         hypothesis type
+ * @param <OR>
+ *         membership oracle type
+ * @param <I>
+ *         input symbol type
+ * @param <D>
+ *         output domain type
+ * @param <T>
+ *         serializable state type
  *
  * @author bainczyk
  */
-public abstract class AbstractResumableLearnerTest<L extends ResumableLearner<T> & LearningAlgorithm<M, I, D>, M extends UniversalDeterministicAutomaton<?, I, ?, ?, ?> & Output<I, D>, OR, I, D, T extends Serializable> {
+public abstract class AbstractResumableLearnerTest<L extends Resumable<T> & LearningAlgorithm<M, I, D>, M extends UniversalDeterministicAutomaton<?, I, ?, ?, ?>, OR, I, D, T extends Serializable> {
 
     protected static final int RANDOM_SEED = 42;
 
@@ -68,6 +80,8 @@ public abstract class AbstractResumableLearnerTest<L extends ResumableLearner<T>
 
     protected abstract OR getOracle(M target);
 
+    protected abstract EquivalenceOracle<M, I, D> getEquivalenceOracle(M target);
+
     protected abstract L getLearner(OR oracle, Alphabet<I> alphabet);
 
     protected abstract int getRounds();
@@ -81,13 +95,15 @@ public abstract class AbstractResumableLearnerTest<L extends ResumableLearner<T>
 
         int roundsPre = 0, roundsPost = 0;
 
+        EquivalenceOracle<M, I, D> equivalenceOracle = getEquivalenceOracle(target);
+
         while (true) {
-            final Word<I> separatingWord =
-                    Automata.findSeparatingWord(target, learner.getHypothesisModel(), inputAlphabet);
-            if (separatingWord == null) {
+            final M hyp = learner.getHypothesisModel();
+            final DefaultQuery<I, D> ce = equivalenceOracle.findCounterExample(hyp, inputAlphabet);
+            if (ce == null) {
                 break;
             }
-            learner.refineHypothesis(new DefaultQuery<>(separatingWord, target.computeOutput(separatingWord)));
+            learner.refineHypothesis(ce);
             roundsPre++;
 
             if (roundsPre == rounds) {
@@ -110,11 +126,12 @@ public abstract class AbstractResumableLearnerTest<L extends ResumableLearner<T>
         learner2.resume(serializedState);
 
         while (true) {
-            final Word<I> word = Automata.findSeparatingWord(target, learner2.getHypothesisModel(), inputAlphabet);
-            if (word == null) {
+            final M hyp = learner2.getHypothesisModel();
+            final DefaultQuery<I, D> ce = equivalenceOracle.findCounterExample(hyp, inputAlphabet);
+            if (ce == null) {
                 break;
             }
-            learner2.refineHypothesis(new DefaultQuery<>(word, target.computeOutput(word)));
+            learner2.refineHypothesis(ce);
             roundsPost++;
         }
 
@@ -122,6 +139,6 @@ public abstract class AbstractResumableLearnerTest<L extends ResumableLearner<T>
                 Automata.testEquivalence(learner.getHypothesisModel(), learner2.getHypothesisModel(), inputAlphabet);
 
         Assert.assertTrue(modelsAreEquivalent);
-        Assert.assertTrue(roundsPre - roundsPost == rounds);
+        Assert.assertEquals(roundsPre - roundsPost, rounds);
     }
 }

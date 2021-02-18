@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,17 +15,19 @@
  */
 package de.learnlib.filter.cache.dfa;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
+import de.learnlib.api.Resumable;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.Query;
 import de.learnlib.filter.cache.LearningCacheOracle.DFALearningCacheOracle;
+import de.learnlib.filter.cache.dfa.DFACacheOracle.DFACacheOracleState;
+import net.automatalib.SupportsGrowingAlphabet;
 import net.automatalib.incremental.dfa.Acceptance;
 import net.automatalib.incremental.dfa.IncrementalDFABuilder;
 import net.automatalib.incremental.dfa.dag.IncrementalDFADAGBuilder;
@@ -33,6 +35,8 @@ import net.automatalib.incremental.dfa.dag.IncrementalPCDFADAGBuilder;
 import net.automatalib.incremental.dfa.tree.IncrementalDFATreeBuilder;
 import net.automatalib.incremental.dfa.tree.IncrementalPCDFATreeBuilder;
 import net.automatalib.words.Alphabet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * DFA cache. This cache is implemented as a membership oracle: upon construction, it is provided with a delegate
@@ -45,53 +49,92 @@ import net.automatalib.words.Alphabet;
  *
  * @author Malte Isberner
  */
-@ParametersAreNonnullByDefault
-public class DFACacheOracle<I> implements DFALearningCacheOracle<I> {
+public class DFACacheOracle<I>
+        implements DFALearningCacheOracle<I>, SupportsGrowingAlphabet<I>, Resumable<DFACacheOracleState<I>> {
 
-    private final IncrementalDFABuilder<I> incDfa;
-    private final Lock incDfaLock;
+    private static final Logger LOGGER = LoggerFactory.getLogger(DFACacheOracle.class);
+
+    private IncrementalDFABuilder<I> incDfa;
+    private final ReadWriteLock incDfaLock;
     private final MembershipOracle<I, Boolean> delegate;
 
-    /**
-     * Constructor.
-     *
-     * @param alphabet
-     *         the alphabet of the cache
-     * @param delegate
-     *         the delegate oracle
-     *
-     * @deprecated since 2014-01-24. Use {@link DFACaches#createCache(Alphabet, MembershipOracle)}
-     */
-    @Deprecated
-    public DFACacheOracle(Alphabet<I> alphabet, MembershipOracle<I, Boolean> delegate) {
-        this(new IncrementalDFADAGBuilder<>(alphabet), delegate);
-    }
-
-    public DFACacheOracle(IncrementalDFABuilder<I> incDfa, MembershipOracle<I, Boolean> delegate) {
-        this(incDfa, new ReentrantLock(), delegate);
-    }
-
-    private DFACacheOracle(IncrementalDFABuilder<I> incDfa, Lock lock, MembershipOracle<I, Boolean> delegate) {
+    DFACacheOracle(IncrementalDFABuilder<I> incDfa, MembershipOracle<I, Boolean> delegate) {
         this.incDfa = incDfa;
-        this.incDfaLock = lock;
+        this.incDfaLock = new ReentrantReadWriteLock();
         this.delegate = delegate;
     }
 
+    /**
+     * Creates a cache oracle for a DFA learning setup, using a tree for internal cache organization.
+     *
+     * @param alphabet
+     *         the alphabet containing the symbols of possible queries
+     * @param delegate
+     *         the oracle to delegate queries to, in case of a cache-miss.
+     * @param <I>
+     *         input symbol type
+     *
+     * @return the cached {@link DFACacheOracle}.
+     *
+     * @see IncrementalDFATreeBuilder
+     */
     public static <I> DFACacheOracle<I> createTreeCacheOracle(Alphabet<I> alphabet,
                                                               MembershipOracle<I, Boolean> delegate) {
         return new DFACacheOracle<>(new IncrementalDFATreeBuilder<>(alphabet), delegate);
     }
 
+    /**
+     * Creates a prefix-closed cache oracle for a DFA learning setup, using a tree for internal cache organization.
+     *
+     * @param alphabet
+     *         the alphabet containing the symbols of possible queries
+     * @param delegate
+     *         the oracle to delegate queries to, in case of a cache-miss.
+     * @param <I>
+     *         input symbol type
+     *
+     * @return the cached {@link DFACacheOracle}.
+     *
+     * @see IncrementalPCDFATreeBuilder
+     */
     public static <I> DFACacheOracle<I> createTreePCCacheOracle(Alphabet<I> alphabet,
                                                                 MembershipOracle<I, Boolean> delegate) {
         return new DFACacheOracle<>(new IncrementalPCDFATreeBuilder<>(alphabet), delegate);
     }
 
+    /**
+     * Creates a cache oracle for a DFA learning setup, using a DAG for internal cache organization.
+     *
+     * @param alphabet
+     *         the alphabet containing the symbols of possible queries
+     * @param delegate
+     *         the oracle to delegate queries to, in case of a cache-miss.
+     * @param <I>
+     *         input symbol type
+     *
+     * @return the cached {@link DFACacheOracle}.
+     *
+     * @see IncrementalDFADAGBuilder
+     */
     public static <I> DFACacheOracle<I> createDAGCacheOracle(Alphabet<I> alphabet,
                                                              MembershipOracle<I, Boolean> delegate) {
         return new DFACacheOracle<>(new IncrementalDFADAGBuilder<>(alphabet), delegate);
     }
 
+    /**
+     * Creates a prefix-closed cache oracle for a DFA learning setup, using a DAG for internal cache organization.
+     *
+     * @param alphabet
+     *         the alphabet containing the symbols of possible queries
+     * @param delegate
+     *         the oracle to delegate queries to, in case of a cache-miss.
+     * @param <I>
+     *         input symbol type
+     *
+     * @return the cached {@link DFACacheOracle}.
+     *
+     * @see IncrementalPCDFADAGBuilder
+     */
     public static <I> DFACacheOracle<I> createDAGPCCacheOracle(Alphabet<I> alphabet,
                                                                MembershipOracle<I, Boolean> delegate) {
         return new DFACacheOracle<>(new IncrementalPCDFADAGBuilder<>(alphabet), delegate);
@@ -113,7 +156,7 @@ public class DFACacheOracle<I> implements DFALearningCacheOracle<I> {
     public void processQueries(Collection<? extends Query<I, Boolean>> queries) {
         List<ProxyQuery<I>> unanswered = new ArrayList<>();
 
-        incDfaLock.lock();
+        incDfaLock.readLock().lock();
         try {
             for (Query<I, Boolean> q : queries) {
                 Acceptance acc = incDfa.lookup(q.getInput());
@@ -124,19 +167,56 @@ public class DFACacheOracle<I> implements DFALearningCacheOracle<I> {
                 }
             }
         } finally {
-            incDfaLock.unlock();
+            incDfaLock.readLock().unlock();
         }
 
         delegate.processQueries(unanswered);
 
-        incDfaLock.lock();
+        incDfaLock.writeLock().lock();
         try {
             for (ProxyQuery<I> q : unanswered) {
                 incDfa.insert(q.getInput(), q.getAnswer());
             }
         } finally {
-            incDfaLock.unlock();
+            incDfaLock.writeLock().unlock();
         }
     }
 
+    @Override
+    public void addAlphabetSymbol(I symbol) {
+        incDfa.addAlphabetSymbol(symbol);
+    }
+
+    @Override
+    public DFACacheOracleState<I> suspend() {
+        return new DFACacheOracleState<>(incDfa);
+    }
+
+    @Override
+    public void resume(DFACacheOracleState<I> state) {
+        final Class<?> thisClass = this.incDfa.getClass();
+        final Class<?> stateClass = state.getBuilder().getClass();
+
+        if (!thisClass.equals(stateClass)) {
+            LOGGER.warn(
+                    "You currently plan to use a '{}', but the state contained a '{}'. This may yield unexpected behavior.",
+                    thisClass,
+                    stateClass);
+        }
+
+        this.incDfa = state.getBuilder();
+    }
+
+    public static class DFACacheOracleState<I> implements Serializable {
+
+        private final IncrementalDFABuilder<I> builder;
+
+        DFACacheOracleState(IncrementalDFABuilder<I> builder) {
+            this.builder = builder;
+        }
+
+        IncrementalDFABuilder<I> getBuilder() {
+            return builder;
+        }
+    }
 }

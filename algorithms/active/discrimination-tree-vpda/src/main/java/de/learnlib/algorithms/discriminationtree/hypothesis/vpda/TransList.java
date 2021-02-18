@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -85,17 +85,6 @@ public class TransList<I> extends IntrusiveList<AbstractHypTrans<I>> {
         result.setNextElement(null);
 
         return result;
-    }
-
-    public int size() {
-        AbstractHypTrans<I> curr = next;
-        int i = 0;
-        while (curr != null) {
-            i++;
-            curr = curr.getNextElement();
-        }
-
-        return i;
     }
 
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,8 @@ package de.learnlib.datastructure.list;
 import java.util.Iterator;
 
 import com.google.common.collect.AbstractIterator;
+import org.checkerframework.checker.nullness.qual.EnsuresNonNullIf;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * The head of the intrusive linked list for storing incoming transitions of a DT node.
@@ -29,6 +31,7 @@ import com.google.common.collect.AbstractIterator;
  */
 public class IntrusiveList<T extends IntrusiveListElem<T>> extends IntrusiveListElemImpl<T> implements Iterable<T> {
 
+    @EnsuresNonNullIf(expression = "next", result = false)
     public boolean isEmpty() {
         return next == null;
     }
@@ -38,8 +41,19 @@ public class IntrusiveList<T extends IntrusiveListElem<T>> extends IntrusiveList
      *
      * @return any block from the list, or {@code null} if the list is empty.
      */
-    public T choose() {
+    public @Nullable T choose() {
         return next;
+    }
+
+    public int size() {
+        T curr = next;
+        int i = 0;
+        while (curr != null) {
+            i++;
+            curr = curr.getNextElement();
+        }
+
+        return i;
     }
 
     @Override
@@ -49,9 +63,9 @@ public class IntrusiveList<T extends IntrusiveListElem<T>> extends IntrusiveList
 
     private class ListIterator extends AbstractIterator<T> {
 
-        private T cursor;
+        private @Nullable T cursor;
 
-        ListIterator(T start) {
+        ListIterator(@Nullable T start) {
             this.cursor = start;
         }
 

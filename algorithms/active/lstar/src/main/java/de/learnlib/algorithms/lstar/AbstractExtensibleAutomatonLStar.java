@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,12 +25,12 @@ import de.learnlib.algorithms.lstar.closing.ClosingStrategy;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.datastructure.observationtable.Row;
-import net.automatalib.automata.GrowableAlphabetAutomaton;
+import net.automatalib.SupportsGrowingAlphabet;
 import net.automatalib.automata.MutableDeterministic;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 
-public abstract class AbstractExtensibleAutomatonLStar<A, I, D, S, T, SP, TP, AI extends MutableDeterministic<S, I, T, SP, TP> & GrowableAlphabetAutomaton<I>>
+public abstract class AbstractExtensibleAutomatonLStar<A, I, D, S, T, SP, TP, AI extends MutableDeterministic<S, I, T, SP, TP> & SupportsGrowingAlphabet<I>>
         extends AbstractAutomatonLStar<A, I, D, S, T, SP, TP, AI> {
 
     protected final ObservationTableCEXHandler<? super I, ? super D> cexHandler;
@@ -59,12 +59,12 @@ public abstract class AbstractExtensibleAutomatonLStar<A, I, D, S, T, SP, TP, AI
     }
 
     @Override
-    protected List<Word<I>> initialPrefixes() {
+    protected final List<Word<I>> initialPrefixes() {
         return initialPrefixes;
     }
 
     @Override
-    protected List<Word<I>> initialSuffixes() {
+    protected final List<Word<I>> initialSuffixes() {
         return initialSuffixes;
     }
 
@@ -75,8 +75,12 @@ public abstract class AbstractExtensibleAutomatonLStar<A, I, D, S, T, SP, TP, AI
 
     public static final class BuilderDefaults {
 
+        private BuilderDefaults() {
+            // prevent instantiation
+        }
+
         public static <I> List<Word<I>> initialPrefixes() {
-            return Collections.singletonList(Word.<I>epsilon());
+            return Collections.singletonList(Word.epsilon());
         }
 
         public static <I> List<Word<I>> initialSuffixes() {

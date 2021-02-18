@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,15 +20,11 @@ import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 /**
  * A simple histogram data set.
  *
  * @author falkhowar
  */
-@ParametersAreNonnullByDefault
 public class HistogramDataSet extends AbstractStatisticData {
 
     private final SortedMap<Long, Integer> histogram = new TreeMap<>();
@@ -54,7 +50,6 @@ public class HistogramDataSet extends AbstractStatisticData {
         mean = mean + ((((double) value) - mean) / size);
     }
 
-    @Nonnull
     public SortedMap<Long, Integer> getHistogram() {
         return histogram;
     }
@@ -77,28 +72,28 @@ public class HistogramDataSet extends AbstractStatisticData {
             int count = e.getValue();
             idx += count;
             if (idx >= size / 2) {
-                return e.getValue();
+                return e.getKey();
             }
         }
         return 0.0;
     }
 
     @Override
-    @Nonnull
     public String getSummary() {
         return getName() + " [" + getUnit() + "]: " + size + " (count), " + sum + " (sum), " + mean + " (mean), " +
                getMedian() + " (median)";
     }
 
     @Override
-    @Nonnull
     public String getDetails() {
         StringBuilder sb = new StringBuilder();
-        sb.append(getSummary()).append(System.getProperty("line.separator"));
+        sb.append(getSummary()).append(System.lineSeparator());
         for (Entry<Long, Integer> e : histogram.entrySet()) {
-            sb.append("    ").append(e.getKey()).
-                    append(", ").append(e.getValue()).
-                      append(System.getProperty("line.separator"));
+            sb.append('\t')
+              .append(e.getKey())
+              .append(", ")
+              .append(e.getValue())
+              .append(System.lineSeparator());
         }
         return sb.toString();
     }

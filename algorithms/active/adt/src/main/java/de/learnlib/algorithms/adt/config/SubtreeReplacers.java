@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,7 +27,7 @@ import de.learnlib.algorithms.adt.config.model.replacer.ExhaustiveReplacer;
 import de.learnlib.algorithms.adt.config.model.replacer.LevelOrderReplacer;
 import de.learnlib.algorithms.adt.config.model.replacer.SingleReplacer;
 import de.learnlib.algorithms.adt.model.ReplacementResult;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.words.Alphabet;
 
 /**

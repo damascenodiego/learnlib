@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,8 @@
 package de.learnlib.driver.util;
 
 import de.learnlib.api.SUL;
-import de.learnlib.api.exception.SULException;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A {@link SUL} that implements steps by stepping through a {@link MealyMachine}.
@@ -64,7 +64,7 @@ public class MealySimulatorSUL<I, O> implements SUL<I, O> {
         this(new MealySimulatorSULImpl<>(mealy, noTransOut));
     }
 
-    private MealySimulatorSUL(MealySimulatorSULImpl<?, I, ?, O> impl) {
+    protected MealySimulatorSUL(MealySimulatorSULImpl<?, I, ?, O> impl) {
         this.impl = impl;
     }
 
@@ -79,7 +79,7 @@ public class MealySimulatorSUL<I, O> implements SUL<I, O> {
     }
 
     @Override
-    public O step(I in) throws SULException {
+    public O step(I in) {
         return impl.step(in);
     }
 
@@ -107,11 +107,11 @@ public class MealySimulatorSUL<I, O> implements SUL<I, O> {
      *
      * @author Malte Isberner
      */
-    private static final class MealySimulatorSULImpl<S, I, T, O> implements SUL<I, O> {
+    static class MealySimulatorSULImpl<S, I, T, O> implements SUL<I, O> {
 
         private final MealyMachine<S, I, T, O> mealy;
         private final O noTransOut;
-        private S curr;
+        private @Nullable S curr;
 
         MealySimulatorSULImpl(MealyMachine<S, I, T, O> mealy, O noTransOut) {
             this.mealy = mealy;
@@ -129,7 +129,7 @@ public class MealySimulatorSUL<I, O> implements SUL<I, O> {
         }
 
         @Override
-        public O step(I in) throws SULException {
+        public O step(I in) {
             O out = noTransOut;
             if (curr != null) {
                 T trans = mealy.getTransition(curr, in);
@@ -151,6 +151,13 @@ public class MealySimulatorSUL<I, O> implements SUL<I, O> {
         @Override
         public MealySimulatorSULImpl<S, I, T, O> fork() {
             return new MealySimulatorSULImpl<>(mealy, noTransOut);
+        }
+
+        S getCurr() {
+            if (curr == null) {
+                throw new IllegalStateException("SUL was not properly initialized");
+            }
+            return curr;
         }
     }
 

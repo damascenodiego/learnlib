@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,22 +18,18 @@ package de.learnlib.util.mealy;
 import java.util.Iterator;
 import java.util.Objects;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.algorithm.LearningAlgorithm;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Utility class helping to unify various approaches to actively learning Mealy machines.
  *
  * @author Malte Isberner
  */
-@ParametersAreNonnullByDefault
 public final class MealyUtil {
 
     public static final int NO_MISMATCH = -1;
@@ -67,13 +63,20 @@ public final class MealyUtil {
         int i = 0;
         S state = hypothesis.getInitialState();
 
+        if (state == null) {
+            return NO_MISMATCH;
+        }
+
         Iterator<I> inIt = input.iterator();
         Iterator<O> outIt = output.iterator();
 
         while (inIt.hasNext() && outIt.hasNext()) {
-            T trans = hypothesis.getTransition(state, inIt.next());
-            O ceOut = outIt.next();
-            O transOut = hypothesis.getTransitionOutput(trans);
+            final T trans = hypothesis.getTransition(state, inIt.next());
+            if (trans== null) {
+                return NO_MISMATCH;
+            }
+            final O ceOut = outIt.next();
+            final O transOut = hypothesis.getTransitionOutput(trans);
             if (!Objects.equals(transOut, ceOut)) {
                 return i;
             }
@@ -84,9 +87,8 @@ public final class MealyUtil {
         return NO_MISMATCH;
     }
 
-    @Nullable
-    public static <I, O> DefaultQuery<I, Word<O>> shortenCounterExample(MealyMachine<?, I, ?, O> hypothesis,
-                                                                        DefaultQuery<I, Word<O>> ceQuery) {
+    public static <I, O> @Nullable DefaultQuery<I, Word<O>> shortenCounterExample(MealyMachine<?, I, ?, O> hypothesis,
+                                                                                  DefaultQuery<I, Word<O>> ceQuery) {
         Word<I> cePrefix = ceQuery.getPrefix(), ceSuffix = ceQuery.getSuffix();
         Word<O> hypOut = hypothesis.computeSuffixOutput(cePrefix, ceSuffix);
         Word<O> ceOut = ceQuery.getOutput();
@@ -100,9 +102,8 @@ public final class MealyUtil {
         return new DefaultQuery<>(cePrefix, ceSuffix.prefix(mismatchIdx + 1), ceOut.prefix(mismatchIdx + 1));
     }
 
-    @Nullable
-    public static <I, O> DefaultQuery<I, O> reduceCounterExample(MealyMachine<?, I, ?, O> hypothesis,
-                                                                 DefaultQuery<I, Word<O>> ceQuery) {
+    public static <I, O> @Nullable DefaultQuery<I, O> reduceCounterExample(MealyMachine<?, I, ?, O> hypothesis,
+                                                                           DefaultQuery<I, Word<O>> ceQuery) {
         Word<I> cePrefix = ceQuery.getPrefix(), ceSuffix = ceQuery.getSuffix();
         Word<O> hypOut = hypothesis.computeSuffixOutput(cePrefix, ceSuffix);
         Word<O> ceOut = ceQuery.getOutput();
@@ -116,14 +117,12 @@ public final class MealyUtil {
         return new DefaultQuery<>(cePrefix, ceSuffix.prefix(mismatchIdx + 1), ceOut.getSymbol(mismatchIdx));
     }
 
-    @Nonnull
     public static <M extends MealyMachine<?, I, ?, O>, I, O> LearningAlgorithm.MealyLearner<I, O> wrapSymbolLearner(
             LearningAlgorithm<M, I, O> learner) {
         return new MealyLearnerWrapper<>(learner);
     }
 
-    @Nonnull
-    public static <I, O> MembershipOracle<I, O> wrapWordOracle(MembershipOracle<I, Word<O>> oracle) {
+    public static <I, O> MembershipOracle<I, @Nullable O> wrapWordOracle(MembershipOracle<I, Word<O>> oracle) {
         return new SymbolOracleWrapper<>(oracle);
     }
 

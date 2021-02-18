@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,14 +21,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-import javax.annotation.Signed;
-
 import de.learnlib.api.AccessSequenceTransformer;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.checkerframework.checker.signedness.qual.Signed;
 
 /**
  * An observation table is a common method for learning algorithms to store organize their observations. This interface
@@ -64,7 +61,6 @@ import net.automatalib.words.Word;
  *
  * @author Malte Isberner
  */
-@ParametersAreNonnullByDefault
 public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
 
     /**
@@ -85,7 +81,6 @@ public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
      *
      * @return all prefixes in the table
      */
-    @Nonnull
     default Collection<Word<I>> getAllPrefixes() {
         Collection<Word<I>> shortPrefixes = getShortPrefixes();
         Collection<Word<I>> longPrefixes = getLongPrefixes();
@@ -102,7 +97,6 @@ public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
      *
      * @return the short prefixes in the table
      */
-    @Nonnull
     default Collection<Word<I>> getShortPrefixes() {
         Collection<Row<I>> spRows = getShortPrefixRows();
         return spRows.stream().map(Row::getLabel).collect(Collectors.toList());
@@ -114,23 +108,29 @@ public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
      *
      * @return the long prefixes in the table
      */
-    @Nonnull
     default Collection<Word<I>> getLongPrefixes() {
         Collection<Row<I>> lpRows = getLongPrefixRows();
         return lpRows.stream().map(Row::getLabel).collect(Collectors.toList());
     }
 
-    @Nonnull
     Collection<Row<I>> getShortPrefixRows();
 
-    @Nonnull
     Collection<Row<I>> getLongPrefixRows();
 
-    @Nullable
+    /**
+     * Returns the specified row of the observation table.
+     *
+     * @param idx
+     *         the index of the row
+     *
+     * @return the row
+     *
+     * @throws IndexOutOfBoundsException
+     *         if {@code idx} is less than 0 or greater than {@code number of rows - 1}.
+     */
     Row<I> getRow(int idx);
 
-    @Nullable
-    default Row<I> getRow(Word<I> prefix) {
+    default @Nullable Row<I> getRow(Word<I> prefix) {
         for (Row<I> row : getAllRows()) {
             if (prefix.equals(row.getLabel())) {
                 return row;
@@ -140,7 +140,6 @@ public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
         return null;
     }
 
-    @Nonnull
     default Collection<Row<I>> getAllRows() {
         Collection<Row<I>> spRows = getShortPrefixRows();
         Collection<Row<I>> lpRows = getLongPrefixRows();
@@ -169,7 +168,7 @@ public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
     }
 
     default int numberOfLongPrefixRows() {
-        return getShortPrefixRows().size();
+        return getLongPrefixRows().size();
     }
 
     /**
@@ -186,8 +185,7 @@ public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
         return (findUnclosedRow() == null);
     }
 
-    @Nullable
-    default Row<I> findUnclosedRow() {
+    default @Nullable Row<I> findUnclosedRow() {
         final boolean[] spContents = new boolean[numberOfDistinctRows()];
 
         for (Row<I> spRow : getShortPrefixRows()) {
@@ -203,8 +201,7 @@ public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
         return null;
     }
 
-    @Nullable
-    default Word<I> findDistinguishingSuffix(Inconsistency<I> inconsistency) {
+    default @Nullable Word<I> findDistinguishingSuffix(Inconsistency<I> inconsistency) {
         int suffixIndex = findDistinguishingSuffixIndex(inconsistency);
         if (suffixIndex != NO_DISTINGUISHING_SUFFIX) {
             return null;
@@ -223,8 +220,7 @@ public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
      * @throws InvalidRowException
      *         if the rows do not belong to this observation table
      */
-    @Nullable
-    default Word<I> findDistinguishingSuffix(Row<I> row1, Row<I> row2) {
+    default @Nullable Word<I> findDistinguishingSuffix(Row<I> row1, Row<I> row2) {
         int suffixIndex = findDistinguishingSuffixIndex(row1, row2);
         if (suffixIndex != NO_DISTINGUISHING_SUFFIX) {
             return null;
@@ -235,12 +231,8 @@ public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
     /**
      * @return the suffix (column) index where the contents of the rows differ, or {@code #NO_DISTINGUISHING_SUFFIX} if
      * the contents of the rows are equal.
-     *
-     * @throws NoSuchRowException
-     *         if the
      */
-    @Signed
-    default int findDistinguishingSuffixIndex(Inconsistency<I> inconsistency) {
+    default @Signed int findDistinguishingSuffixIndex(Inconsistency<I> inconsistency) {
         Row<I> row1 = inconsistency.getFirstRow();
         Row<I> row2 = inconsistency.getSecondRow();
         int symIdx = getInputAlphabet().getSymbolIndex(inconsistency.getSymbol());
@@ -260,8 +252,8 @@ public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
      * @throws InvalidRowException
      *         if the rows do not belong to this observation table
      */
-    @Signed
-    default int findDistinguishingSuffixIndex(Row<I> row1, Row<I> row2) {
+
+    default @Signed int findDistinguishingSuffixIndex(Row<I> row1, Row<I> row2) {
         for (int i = 0; i < getSuffixes().size(); i++) {
             if (!Objects.equals(cellContents(row1, i), cellContents(row2, i))) {
                 return i;
@@ -279,7 +271,6 @@ public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
      *
      * @return the suffix
      */
-    @Nonnull
     default Word<I> getSuffix(int index) {
         return getSuffixes().get(index);
     }
@@ -289,7 +280,6 @@ public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
      *
      * @return all suffixes in the table
      */
-    @Nonnull
     List<Word<I>> getSuffixes();
 
     default int numberOfSuffixes() {
@@ -300,8 +290,7 @@ public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
         return (findInconsistency() == null);
     }
 
-    @Nullable
-    default Inconsistency<I> findInconsistency() {
+    default @Nullable Inconsistency<I> findInconsistency() {
         @SuppressWarnings("unchecked")
         final Row<I>[] canonicalRows = (Row<I>[]) new Row<?>[numberOfDistinctRows()];
         final Alphabet<I> alphabet = getInputAlphabet();
@@ -333,6 +322,8 @@ public interface ObservationTable<I, D> extends AccessSequenceTransformer<I> {
 
     List<D> rowContents(Row<I> row);
 
-    D cellContents(Row<I> row, int columnId);
+    default D cellContents(Row<I> row, int columnId) {
+        return rowContents(row).get(columnId);
+    }
 
 }

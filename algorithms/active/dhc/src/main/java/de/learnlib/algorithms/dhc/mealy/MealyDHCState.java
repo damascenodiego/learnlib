@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,11 @@
 package de.learnlib.algorithms.dhc.mealy;
 
 import java.io.Serializable;
-import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.common.collect.Maps;
-import net.automatalib.automata.transout.impl.compact.CompactMealy;
+import net.automatalib.automata.transducers.impl.compact.CompactMealy;
 import net.automatalib.commons.util.mappings.MutableMapping;
 import net.automatalib.words.Word;
 
@@ -36,11 +36,11 @@ import net.automatalib.words.Word;
  */
 public class MealyDHCState<I, O> implements Serializable {
 
-    private final LinkedHashSet<Word<I>> splitters;
+    private final Set<Word<I>> splitters;
     private final CompactMealy<I, O> hypothesis;
     private final Map<Integer, MealyDHC.QueueElement<I, O>> accessSequences;
 
-    MealyDHCState(final LinkedHashSet<Word<I>> splitters,
+    MealyDHCState(final Set<Word<I>> splitters,
                   final CompactMealy<I, O> hypothesis,
                   final MutableMapping<Integer, MealyDHC.QueueElement<I, O>> accessSequences) {
         this.splitters = splitters;
@@ -55,7 +55,7 @@ public class MealyDHCState<I, O> implements Serializable {
         }
     }
 
-    LinkedHashSet<Word<I>> getSplitters() {
+    Set<Word<I>> getSplitters() {
         return splitters;
     }
 

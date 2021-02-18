@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,9 +28,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import com.github.misberner.buildergen.annotations.GenerateBuilder;
 import de.learnlib.algorithms.adt.adt.ADT;
 import de.learnlib.algorithms.adt.adt.ADT.LCAInfo;
@@ -52,20 +49,19 @@ import de.learnlib.algorithms.adt.model.ObservationTree;
 import de.learnlib.algorithms.adt.model.ReplacementResult;
 import de.learnlib.algorithms.adt.util.ADTUtil;
 import de.learnlib.algorithms.adt.util.SQOOTBridge;
+import de.learnlib.api.Resumable;
 import de.learnlib.api.algorithm.LearningAlgorithm;
-import de.learnlib.api.algorithm.feature.ResumableLearner;
-import de.learnlib.api.algorithm.feature.SupportsGrowingAlphabet;
 import de.learnlib.api.oracle.SymbolQueryOracle;
 import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.counterexamples.LocalSuffixFinders;
 import de.learnlib.util.MQUtil;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.SupportsGrowingAlphabet;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.commons.util.Pair;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 import net.automatalib.words.WordBuilder;
 import net.automatalib.words.impl.Alphabets;
-import net.automatalib.words.impl.SymbolHidingAlphabet;
 
 /**
  * The main learning algorithm.
@@ -77,13 +73,12 @@ import net.automatalib.words.impl.SymbolHidingAlphabet;
  *
  * @author frohme
  */
-@ParametersAreNonnullByDefault
 public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
                                          PartialTransitionAnalyzer<ADTState<I, O>, I>,
                                          SupportsGrowingAlphabet<I>,
-                                         ResumableLearner<ADTLearnerState<ADTState<I, O>, I, O>> {
+                                         Resumable<ADTLearnerState<ADTState<I, O>, I, O>> {
 
-    private Alphabet<I> alphabet;
+    private final Alphabet<I> alphabet;
     private final SQOOTBridge<I, O> oracle;
     private final LeafSplitter leafSplitter;
     private final ADTExtender adtExtender;
@@ -95,16 +90,25 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
     private ADTHypothesis<I, O> hypothesis;
     private ADT<ADTState<I, O>, I, O> adt;
 
-    @GenerateBuilder(defaults = BuilderDefaults.class)
     public ADTLearner(final Alphabet<I> alphabet,
                       final SymbolQueryOracle<I, O> oracle,
                       final LeafSplitter leafSplitter,
                       final ADTExtender adtExtender,
                       final SubtreeReplacer subtreeReplacer) {
+        this(alphabet, oracle, leafSplitter, adtExtender, subtreeReplacer, true);
+    }
 
-        this.alphabet = SymbolHidingAlphabet.wrapIfMutable(alphabet);
+    @GenerateBuilder(defaults = BuilderDefaults.class)
+    public ADTLearner(final Alphabet<I> alphabet,
+                      final SymbolQueryOracle<I, O> oracle,
+                      final LeafSplitter leafSplitter,
+                      final ADTExtender adtExtender,
+                      final SubtreeReplacer subtreeReplacer,
+                      final boolean useObservationTree) {
+
+        this.alphabet = alphabet;
         this.observationTree = new ObservationTree<>(this.alphabet);
-        this.oracle = new SQOOTBridge<>(this.observationTree, oracle, true);
+        this.oracle = new SQOOTBridge<>(this.observationTree, oracle, useObservationTree);
 
         this.leafSplitter = leafSplitter;
         this.adtExtender = adtExtender;
@@ -152,8 +156,7 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
                 final DefaultQuery<I, Word<O>> currentCE = this.openCounterExamples.poll();
                 this.allCounterExamples.add(currentCE);
 
-                while (this.refineHypothesisInternal(currentCE)) {
-                }
+                while (this.refineHypothesisInternal(currentCE)) {}
             }
 
             // subtree replacements may reactivate old CEs
@@ -194,6 +197,9 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
 
         final ADTState<I, O> uState = this.hypothesis.getState(u);
         final ADTState<I, O> uaState = this.hypothesis.getState(ua);
+
+        assert uState != null && uaState != null;
+
         final Word<I> uAccessSequence = uState.getAccessSequence();
         final Word<I> uaAccessSequence = uaState.getAccessSequence();
         final Word<I> uAccessSequenceWithA = uAccessSequence.append(a);
@@ -201,17 +207,21 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
         final ADTState<I, O> newState = this.hypothesis.addState();
         newState.setAccessSequence(uAccessSequenceWithA);
         final ADTTransition<I, O> oldTrans = this.hypothesis.getTransition(uState, a);
+
+        assert oldTrans != null;
+
         oldTrans.setTarget(newState);
         oldTrans.setIsSpanningTreeEdge(true);
 
         final Set<ADTNode<ADTState<I, O>, I, O>> finalNodes = ADTUtil.collectLeaves(this.adt.getRoot());
         final ADTNode<ADTState<I, O>, I, O> nodeToSplit = finalNodes.stream()
-                                                                    .filter(n -> n.getHypothesisState().equals(uaState))
+                                                                    .filter(n -> uaState.equals(n.getHypothesisState()))
                                                                     .findFirst()
                                                                     .orElseThrow(IllegalStateException::new);
 
         final ADTNode<ADTState<I, O>, I, O> newNode;
 
+        // directly insert into observation tree, because we use it for finding a splitter
         this.observationTree.addState(newState, newState.getAccessSequence(), oldTrans.getOutput());
         this.observationTree.addTrace(newState, nodeToSplit);
 
@@ -225,6 +235,7 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
 
             newNode = this.adt.extendLeaf(nodeToSplit, completeSplitter, oldOutput, newOutput);
         } else {
+            // directly insert into observation tree, because we use it for finding a splitter
             this.observationTree.addTrace(uaState, v, this.oracle.answerQuery(uaAccessSequence, v));
             this.observationTree.addTrace(newState, v, this.oracle.answerQuery(uAccessSequenceWithA, v));
 
@@ -274,7 +285,6 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
         return true;
     }
 
-    @Nonnull
     @Override
     public MealyMachine<?, I, ?, O> getHypothesisModel() {
         return this.hypothesis;
@@ -340,10 +350,10 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
     }
 
     @Override
-    public void closeTransition(ADTState<I, O> state, I input)
-            throws PartialTransitionAnalyzer.HypothesisModificationException {
+    public void closeTransition(ADTState<I, O> state, I input) {
 
         final ADTTransition<I, O> transition = this.hypothesis.getTransition(state, input);
+        assert transition != null;
 
         if (transition.needsSifting()) {
             final ADTNode<ADTState<I, O>, I, O> ads = transition.getSiftNode();
@@ -361,33 +371,31 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
 
     @Override
     public boolean isTransitionDefined(ADTState<I, O> state, I input) {
-        return !this.hypothesis.getTransition(state, input).needsSifting();
+        final ADTTransition<I, O> transition = this.hypothesis.getTransition(state, input);
+        assert transition != null;
+        return !transition.needsSifting();
     }
 
     @Override
     public void addAlphabetSymbol(I symbol) {
 
-        if (this.alphabet.containsSymbol(symbol)) {
-            return;
+        if (!this.alphabet.containsSymbol(symbol)) {
+            Alphabets.toGrowingAlphabetOrThrowException(this.alphabet).addSymbol(symbol);
         }
 
         this.hypothesis.addAlphabetSymbol(symbol);
+        this.observationTree.getObservationTree().addAlphabetSymbol(symbol);
 
-        SymbolHidingAlphabet.runWhileHiding(alphabet,
-                                            symbol,
-                                            () -> this.observationTree.getObservationTree().addAlphabetSymbol(symbol));
+        // check if we already have information about the symbol (then the transition is defined) so we don't post
+        // redundant queries
+        if (this.hypothesis.getInitialState() != null &&
+            this.hypothesis.getSuccessor(this.hypothesis.getInitialState(), symbol) == null) {
+            for (final ADTState<I, O> s : this.hypothesis.getStates()) {
+                this.openTransitions.add(this.hypothesis.createOpenTransition(s, symbol, this.adt.getRoot()));
+            }
 
-        // since we share the alphabet instance with our hypothesis, our alphabet might have already been updated (if it
-        // was already a GrowableAlphabet)
-        if (!this.alphabet.containsSymbol(symbol)) {
-            this.alphabet = Alphabets.withNewSymbol(this.alphabet, symbol);
+            this.closeTransitions();
         }
-
-        for (final ADTState<I, O> s : this.hypothesis.getStates()) {
-            this.openTransitions.add(this.hypothesis.createOpenTransition(s, symbol, this.adt.getRoot()));
-        }
-
-        this.closeTransitions();
     }
 
     @Override
@@ -746,6 +754,7 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
         ADTNode<ADTState<I, O>, I, O> oldReference = null, newReference = null;
         for (final ADTNode<ADTState<I, O>, I, O> leaf : cachedLeaves) {
             final ADTState<I, O> hypState = leaf.getHypothesisState();
+            assert hypState != null;
 
             if (hypState.equals(iter.getHypothesisState())) {
                 oldReference = leaf;
@@ -775,10 +784,12 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
         }
 
         final ADTNode<ADTState<I, O>, I, O> reset = new ADTResetNode<>(oldTrace);
-        final O parentOutput = ADTUtil.getOutputForSuccessor(iter.getParent(), iter);
+        final ADTNode<ADTState<I, O>, I, O> parent = iter.getParent();
+        assert parent != null;
+        final O parentOutput = ADTUtil.getOutputForSuccessor(parent, iter);
 
-        iter.getParent().getChildren().put(parentOutput, reset);
-        reset.setParent(iter.getParent());
+        parent.getChildren().put(parentOutput, reset);
+        reset.setParent(parent);
         oldTrace.setParent(reset);
     }
 
@@ -809,7 +820,15 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
         }
     }
 
-    public static class BuilderDefaults {
+    public ADT<ADTState<I, O>, I, O> getADT() {
+        return adt;
+    }
+
+    public static final class BuilderDefaults {
+
+        private BuilderDefaults() {
+            // prevent instantiation
+        }
 
         public static LeafSplitter leafSplitter() {
             return LeafSplitters.DEFAULT_SPLITTER;
@@ -821,6 +840,10 @@ public class ADTLearner<I, O> implements LearningAlgorithm.MealyLearner<I, O>,
 
         public static SubtreeReplacer subtreeReplacer() {
             return SubtreeReplacers.LEVELED_BEST_EFFORT;
+        }
+
+        public static boolean useObservationTree() {
+            return true;
         }
     }
 }

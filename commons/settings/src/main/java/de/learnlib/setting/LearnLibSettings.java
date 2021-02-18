@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,10 +15,14 @@
  */
 package de.learnlib.setting;
 
+import java.util.Locale;
 import java.util.Properties;
+import java.util.function.Function;
 
 import de.learnlib.api.setting.LearnLibSettingsSource;
+import net.automatalib.commons.util.WrapperUtil;
 import net.automatalib.commons.util.settings.SettingsSource;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,66 +41,56 @@ public final class LearnLibSettings {
         return INSTANCE;
     }
 
-    public String getProperty(String propName, String defaultValue) {
-        return properties.getProperty("learnlib." + propName, defaultValue);
+    public String getProperty(LearnLibProperty property, String defaultValue) {
+        return properties.getProperty(property.getPropertyKey(), defaultValue);
     }
 
-    public String getProperty(String propName) {
-        return properties.getProperty("learnlib." + propName);
+    public @Nullable String getProperty(LearnLibProperty property) {
+        return properties.getProperty(property.getPropertyKey());
     }
 
-    public <E extends Enum<E>> E getEnumValue(String propName, Class<E> enumClazz, E defaultValue) {
-        E value = getEnumValue(propName, enumClazz);
+    public <E extends Enum<E>> E getEnumValue(LearnLibProperty property, Class<E> enumClazz, E defaultValue) {
+        E value = getEnumValue(property, enumClazz);
         if (value != null) {
             return value;
         }
         return defaultValue;
     }
 
-    public <E extends Enum<E>> E getEnumValue(String propName, Class<E> enumClazz) {
-        String prop = getProperty(propName);
+    public <E extends Enum<E>> @Nullable E getEnumValue(LearnLibProperty property, Class<E> enumClazz) {
+        // TODO: the assumption that enum constants are all-uppercase does not *always* hold!
+        return getTypedValue(property, p -> Enum.valueOf(enumClazz, p.toUpperCase(Locale.ROOT)));
+    }
+
+    public boolean getBool(LearnLibProperty property, boolean defaultValue) {
+        return WrapperUtil.booleanValue(getBoolean(property), defaultValue);
+    }
+
+    public @Nullable Boolean getBoolean(LearnLibProperty property) {
+        return getTypedValue(property, Boolean::parseBoolean);
+    }
+
+    public int getInt(LearnLibProperty property, int defaultValue) {
+        return WrapperUtil.intValue(getInteger(property), defaultValue);
+    }
+
+    public @Nullable Integer getInteger(LearnLibProperty property) {
+        return getTypedValue(property, Integer::parseInt);
+    }
+
+    private <T> @Nullable T getTypedValue(LearnLibProperty property, Function<String, T> valueExtractor) {
+        String prop = getProperty(property);
+
         if (prop == null) {
             return null;
         }
 
-        // TODO: the assumption that enum constants are all-uppercase does not *always* hold!
-        return Enum.valueOf(enumClazz, prop.toUpperCase());
-    }
-
-    public boolean getBool(String propName, boolean defaultValue) {
-        Boolean b = getBoolean(propName);
-        if (b != null) {
-            return b;
+        try {
+            return valueExtractor.apply(prop);
+        } catch (IllegalArgumentException ex) {
+            LOG.warn("Could not parse LearnLib property '" + property + "'.", ex);
+            return null;
         }
-        return defaultValue;
-    }
-
-    public Boolean getBoolean(String propName) {
-        String prop = getProperty(propName);
-        if (prop != null) {
-            return Boolean.parseBoolean(prop);
-        }
-        return null;
-    }
-
-    public int getInt(String propName, int defaultValue) {
-        Integer prop = getInteger(propName);
-        if (prop != null) {
-            return prop;
-        }
-        return defaultValue;
-    }
-
-    public Integer getInteger(String propName) {
-        String prop = getProperty(propName);
-        if (prop != null) {
-            try {
-                return Integer.parseInt(prop);
-            } catch (NumberFormatException ex) {
-                LOG.warn("Could not parse LearnLib integer property '" + propName + "'.", ex);
-            }
-        }
-        return null;
     }
 
 }

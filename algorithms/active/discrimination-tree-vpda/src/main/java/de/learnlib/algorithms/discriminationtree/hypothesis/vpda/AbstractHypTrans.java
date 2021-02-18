@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -72,11 +72,10 @@ public abstract class AbstractHypTrans<I> extends IntrusiveListElemImpl<Abstract
         return nonTreeTarget;
     }
 
+    @Override
     public Word<I> getAccessSequence() {
         return aseq;
     }
-
-    public abstract boolean isInternal();
 
     public void makeTree(HypLoc<I> tgtLoc) {
         assert !isTree();

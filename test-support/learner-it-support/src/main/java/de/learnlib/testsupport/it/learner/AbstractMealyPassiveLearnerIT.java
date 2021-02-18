@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,7 @@ import de.learnlib.examples.DefaultPassiveLearningExample;
 import de.learnlib.examples.LearningExample;
 import de.learnlib.examples.LearningExamples;
 import de.learnlib.examples.PassiveLearningExample;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 import org.testng.annotations.Factory;
@@ -37,7 +37,7 @@ import org.testng.annotations.Factory;
  *
  * @author frohme
  */
-public abstract class AbstractMealyPassiveLearnerIT extends AbstractPassiveLearnerIT {
+public abstract class AbstractMealyPassiveLearnerIT {
 
     @Factory
     public Object[] createExampleITCases() {
@@ -57,7 +57,7 @@ public abstract class AbstractMealyPassiveLearnerIT extends AbstractPassiveLearn
         final Alphabet<I> alphabet = example.getAlphabet();
         final MealyMachine<?, I, ?, O> reference = example.getReferenceAutomaton();
 
-        Collection<DefaultQuery<I, Word<O>>> queries = super.generateSamples(alphabet, reference);
+        Collection<DefaultQuery<I, Word<O>>> queries = LearnerITUtil.generateSamples(alphabet, reference);
 
         final PassiveLearnerVariantListImpl<MealyMachine<?, I, ?, O>, I, Word<O>> variants =
                 new PassiveLearnerVariantListImpl<>();
@@ -66,7 +66,7 @@ public abstract class AbstractMealyPassiveLearnerIT extends AbstractPassiveLearn
         final PassiveLearningExample<I, Word<O>> effectiveExample =
                 new DefaultPassiveLearningExample<>(queries, alphabet);
 
-        return super.createPassiveExampleITCases(effectiveExample, variants);
+        return LearnerITUtil.createPassiveExampleITCases(effectiveExample, variants);
     }
 
     /**

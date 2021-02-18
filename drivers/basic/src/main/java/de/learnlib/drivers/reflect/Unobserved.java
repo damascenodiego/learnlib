@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,12 +21,11 @@ package de.learnlib.drivers.reflect;
  *
  * @author falkhowar
  */
-public final class Unobserved extends AbstractMethodOutput {
+public final class Unobserved extends MethodOutput {
 
     public static final Unobserved INSTANCE = new Unobserved();
 
-    private Unobserved() {
-    }
+    private Unobserved() {}
 
     @Override
     public String toString() {

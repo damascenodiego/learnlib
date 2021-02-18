@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +17,10 @@ package de.learnlib.oracle.equivalence;
 
 import java.util.Collection;
 
-import javax.annotation.Nullable;
-
 import de.learnlib.api.oracle.EquivalenceOracle;
 import de.learnlib.api.query.DefaultQuery;
 import net.automatalib.automata.concepts.InputAlphabetHolder;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,9 +38,8 @@ public class SimpleEQOracle<A extends InputAlphabetHolder<I>, I, D> implements E
         return new SimpleEQOracle<>(eqOracle);
     }
 
-    @Nullable
     @Override
-    public DefaultQuery<I, D> findCounterExample(A hypothesis, Collection<? extends I> inputs) {
+    public @Nullable DefaultQuery<I, D> findCounterExample(A hypothesis, Collection<? extends I> inputs) {
         LOGGER.debug("Ignoring the set of inputs '{}', because I always use the complete hypothesis' input alphabet",
                      inputs);
         return eqOracle.findCounterExample(hypothesis, hypothesis.getInputAlphabet());

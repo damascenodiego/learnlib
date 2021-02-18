@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
 package de.learnlib.filter.cache.dfa;
 
 import java.util.Collection;
-import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import de.learnlib.api.oracle.EquivalenceOracle;
 import de.learnlib.api.oracle.EquivalenceOracle.DFAEquivalenceOracle;
@@ -25,6 +25,7 @@ import net.automatalib.automata.fsa.DFA;
 import net.automatalib.incremental.dfa.Acceptance;
 import net.automatalib.incremental.dfa.IncrementalDFABuilder;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * An {@link EquivalenceOracle} that tests an hypothesis for consistency with the contents of a {@link DFACacheOracle}.
@@ -37,24 +38,26 @@ import net.automatalib.words.Word;
 public final class DFACacheConsistencyTest<I> implements DFAEquivalenceOracle<I> {
 
     private final IncrementalDFABuilder<I> incDfa;
-    private final Lock incDfaLock;
+    private final ReadWriteLock incDfaLock;
 
     /**
      * Constructor.
      *
      * @param incDfa
      *         the {@link IncrementalDFABuilder} data structure of the cache
+     * @param lock
+     *         the read-write lock for accessing the cache concurrently
      */
-    public DFACacheConsistencyTest(IncrementalDFABuilder<I> incDfa, Lock lock) {
+    DFACacheConsistencyTest(IncrementalDFABuilder<I> incDfa, ReadWriteLock lock) {
         this.incDfa = incDfa;
         this.incDfaLock = lock;
     }
 
     @Override
-    public DefaultQuery<I, Boolean> findCounterExample(DFA<?, I> hypothesis, Collection<? extends I> inputs) {
+    public @Nullable DefaultQuery<I, Boolean> findCounterExample(DFA<?, I> hypothesis, Collection<? extends I> inputs) {
         Word<I> w;
         Acceptance acc;
-        incDfaLock.lock();
+        incDfaLock.readLock().lock();
         try {
             w = incDfa.findSeparatingWord(hypothesis, inputs, false);
             if (w == null) {
@@ -62,7 +65,7 @@ public final class DFACacheConsistencyTest<I> implements DFAEquivalenceOracle<I>
             }
             acc = incDfa.lookup(w);
         } finally {
-            incDfaLock.unlock();
+            incDfaLock.readLock().unlock();
         }
         assert (acc != Acceptance.DONT_KNOW);
 

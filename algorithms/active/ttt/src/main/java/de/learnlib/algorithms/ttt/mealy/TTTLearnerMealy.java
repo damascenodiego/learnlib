@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,7 @@ import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.counterexamples.acex.MealyOutInconsPrefixTransformAcex;
 import de.learnlib.counterexamples.acex.OutInconsPrefixTransformAcex;
 import de.learnlib.util.mealy.MealyUtil;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 import net.automatalib.words.WordBuilder;
@@ -61,7 +61,7 @@ public class TTTLearnerMealy<I, O> extends AbstractTTTLearner<MealyMachine<?, I,
 
     @Override
     @SuppressWarnings("unchecked")
-    public boolean refineHypothesisSingle(DefaultQuery<I, Word<O>> ceQuery) {
+    protected boolean refineHypothesisSingle(DefaultQuery<I, Word<O>> ceQuery) {
         DefaultQuery<I, Word<O>> shortenedCeQuery =
                 MealyUtil.shortenCounterExample((TTTHypothesisMealy<I, O>) hypothesis, ceQuery);
         return shortenedCeQuery != null && super.refineHypothesisSingle(shortenedCeQuery);
@@ -118,7 +118,9 @@ public class TTTLearnerMealy<I, O> extends AbstractTTTLearner<MealyMachine<?, I,
         if (succSeparator == null) {
             return Word.fromLetter(mtrans.output);
         }
-        return succSeparator.subtreeLabel(trans.getDTTarget()).prepend(mtrans.output);
+        Word<O> subtreeLabel = succSeparator.subtreeLabel(trans.getDTTarget());
+        assert subtreeLabel != null;
+        return subtreeLabel.prepend(mtrans.output);
     }
 
     @Override

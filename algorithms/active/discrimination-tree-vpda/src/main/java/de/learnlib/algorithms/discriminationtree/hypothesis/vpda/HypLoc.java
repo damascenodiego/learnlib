@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,10 +18,9 @@ package de.learnlib.algorithms.discriminationtree.hypothesis.vpda;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Supplier;
 
 import de.learnlib.api.AccessSequenceProvider;
-import net.automatalib.commons.util.array.RichArray;
+import net.automatalib.commons.smartcollections.ArrayStorage;
 import net.automatalib.words.VPDAlphabet;
 import net.automatalib.words.Word;
 
@@ -35,34 +34,23 @@ public class HypLoc<I> implements AccessSequenceProvider<I> {
 
     private final AbstractHypTrans<I> treeIncoming;
     private final Word<I> aseq;
-    private final RichArray<HypIntTrans<I>> intSuccessors;
-    private final RichArray<List<HypRetTrans<I>>> returnSuccessors;
-    final int index;
+    private final ArrayStorage<HypIntTrans<I>> intSuccessors;
+    private final ArrayStorage<List<HypRetTrans<I>>> returnSuccessors;
+    private final int index;
     private boolean accepting;
     private DTNode<I> leaf;
 
     public HypLoc(VPDAlphabet<I> alphabet, int index, boolean accepting, AbstractHypTrans<I> treeIncoming) {
         this.index = index;
         this.accepting = accepting;
-        this.intSuccessors = new RichArray<>(alphabet.getNumInternals());
-        this.returnSuccessors = new RichArray<>(alphabet.getNumReturns(),
-                                                (Supplier<List<HypRetTrans<I>>>) ArrayList::new);
+        this.intSuccessors = new ArrayStorage<>(alphabet.getNumInternals());
+        this.returnSuccessors = new ArrayStorage<>(alphabet.getNumReturns(), ArrayList::new);
         this.treeIncoming = treeIncoming;
         this.aseq = (treeIncoming != null) ? treeIncoming.getAccessSequence() : Word.epsilon();
     }
 
-    public HypLoc(VPDAlphabet<I> alphabet, int index, boolean accepting, Word<I> aseq) {
-        this.index = index;
-        this.accepting = accepting;
-        this.intSuccessors = new RichArray<>(alphabet.getNumInternals());
-        this.returnSuccessors = new RichArray<>(alphabet.getNumReturns(),
-                                                (Supplier<List<HypRetTrans<I>>>) ArrayList::new);
-        this.treeIncoming = null;
-        this.aseq = aseq;
-    }
-
     public void updateStackAlphabetSize(int newStackAlphaSize) {
-        for (int i = 0; i < returnSuccessors.length; i++) {
+        for (int i = 0; i < returnSuccessors.size(); i++) {
             List<HypRetTrans<I>> transList = returnSuccessors.get(i);
             if (transList == null) {
                 transList = new ArrayList<>(Collections.nCopies(newStackAlphaSize, null));
@@ -85,6 +73,7 @@ public class HypLoc<I> implements AccessSequenceProvider<I> {
         return treeIncoming == null;
     }
 
+    @Override
     public Word<I> getAccessSequence() {
         return aseq;
     }

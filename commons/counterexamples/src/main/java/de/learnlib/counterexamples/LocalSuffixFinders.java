@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,7 @@ import de.learnlib.api.AccessSequenceTransformer;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.Query;
 import net.automatalib.automata.concepts.SuffixOutput;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A collection of suffix-based local counterexample analyzers.
@@ -35,7 +36,7 @@ public final class LocalSuffixFinders {
      *
      * @see #findLinear(Query, AccessSequenceTransformer, SuffixOutput, MembershipOracle)
      */
-    public static final LocalSuffixFinder<Object, Object> FIND_LINEAR =
+    public static final LocalSuffixFinder<@Nullable Object, @Nullable Object> FIND_LINEAR =
             new AcexLocalSuffixFinder(AcexAnalyzers.LINEAR_FWD, true, "FindLinear");
 
     /**
@@ -44,7 +45,7 @@ public final class LocalSuffixFinders {
      *
      * @see #findLinearReverse(Query, AccessSequenceTransformer, SuffixOutput, MembershipOracle)
      */
-    public static final LocalSuffixFinder<Object, Object> FIND_LINEAR_REVERSE =
+    public static final LocalSuffixFinder<@Nullable Object, @Nullable Object> FIND_LINEAR_REVERSE =
             new AcexLocalSuffixFinder(AcexAnalyzers.LINEAR_BWD, true, "FindLinear-Reverse");
 
     /**
@@ -53,12 +54,11 @@ public final class LocalSuffixFinders {
      *
      * @see #findRivestSchapire(Query, AccessSequenceTransformer, SuffixOutput, MembershipOracle)
      */
-    public static final LocalSuffixFinder<Object, Object> RIVEST_SCHAPIRE =
+    public static final LocalSuffixFinder<@Nullable Object, @Nullable Object> RIVEST_SCHAPIRE =
             new AcexLocalSuffixFinder(AcexAnalyzers.BINARY_SEARCH_BWD, true, "RivestSchapire");
 
     // prevent instantiation
-    private LocalSuffixFinders() {
-    }
+    private LocalSuffixFinders() {}
 
     /**
      * Searches for a distinguishing suffixes by checking for counterexample yielding access sequence transformations in
@@ -73,14 +73,14 @@ public final class LocalSuffixFinders {
      * @param oracle
      *         interface to the SUL
      *
-     * @return the index of the respective suffix, or <tt>-1</tt> if no counterexample could be found
+     * @return the index of the respective suffix, or {@code -1} if no counterexample could be found
      *
      * @see LocalSuffixFinder
      */
-    public static <S, I, D> int findLinear(Query<I, D> ceQuery,
-                                           AccessSequenceTransformer<I> asTransformer,
-                                           SuffixOutput<I, D> hypOutput,
-                                           MembershipOracle<I, D> oracle) {
+    public static <I, D> int findLinear(Query<I, D> ceQuery,
+                                        AccessSequenceTransformer<I> asTransformer,
+                                        SuffixOutput<I, D> hypOutput,
+                                        MembershipOracle<I, D> oracle) {
 
         return AcexLocalSuffixFinder.findSuffixIndex(AcexAnalyzers.LINEAR_FWD,
                                                      true,
@@ -103,7 +103,7 @@ public final class LocalSuffixFinders {
      * @param oracle
      *         interface to the SUL
      *
-     * @return the index of the respective suffix, or <tt>-1</tt> if no counterexample could be found
+     * @return the index of the respective suffix, or {@code -1} if no counterexample could be found
      *
      * @see LocalSuffixFinder
      */
@@ -133,7 +133,7 @@ public final class LocalSuffixFinders {
      * @param oracle
      *         interface to the SUL
      *
-     * @return the index of the respective suffix, or <tt>-1</tt> if no counterexample could be found
+     * @return the index of the respective suffix, or {@code -1} if no counterexample could be found
      *
      * @see LocalSuffixFinder
      */
@@ -151,7 +151,7 @@ public final class LocalSuffixFinders {
     }
 
     @SuppressWarnings("unchecked")
-    public static LocalSuffixFinder<Object, Object>[] values() {
+    public static LocalSuffixFinder<@Nullable Object, @Nullable Object>[] values() {
         return new LocalSuffixFinder[] {FIND_LINEAR, FIND_LINEAR_REVERSE, RIVEST_SCHAPIRE};
     }
 }

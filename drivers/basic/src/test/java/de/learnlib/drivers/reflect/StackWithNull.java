@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,8 @@
 package de.learnlib.drivers.reflect;
 
 import java.util.LinkedList;
+
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A stack implementation with limited size, that ignores operations/returns null when pushing/pop beyond its
@@ -39,7 +41,7 @@ public class StackWithNull {
         }
     }
 
-    public Object pop() {
+    public @Nullable Object pop() {
         return back.isEmpty() ? null : back.pop();
     }
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Copyright (C) 2013-2018 TU Dortmund
+Copyright (C) 2013-2020 TU Dortmund
 This file is part of LearnLib, http://www.learnlib.de/.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,21 +21,17 @@ limitations under the License.
     <parent>
         <groupId>de.learnlib</groupId>
         <artifactId>learnlib-build-parent</artifactId>
-        <version>0.13.1</version>
+        <version>0.16.0</version>
         <relativePath>../build-parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>learnlib-api</artifactId>
+
     <name>LearnLib :: API</name>
     <description>Infrastructure and core interfaces of LearnLib</description>
 
-
     <dependencies>
-        <!--
-        Compile-time dependencies
-        -->
-
-        <!-- AutomataLib dependencies -->
+        <!-- external -->
         <dependency>
             <groupId>net.automatalib</groupId>
             <artifactId>automata-api</artifactId>
@@ -45,29 +41,18 @@ limitations under the License.
             <artifactId>automata-commons-util</artifactId>
         </dependency>
 
-        <!-- JSR-305 -->
         <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
+            <groupId>org.checkerframework</groupId>
+            <artifactId>checker-qual</artifactId>
         </dependency>
 
-        <!-- SLF4J -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
+        <!-- test -->
         <!--
-        Test dependencies
-        -->
-
-        <!-- TestNG -->
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-        </dependency>
-
-        <!-- TODO
          Here we actually want a valid slf4j implementation to check the output. This conflicts with the nop
         implementation defined in the parent, so slf4j will show a warning. However the tests will still pass
         -->
@@ -81,6 +66,17 @@ limitations under the License.
             <artifactId>logback-classic</artifactId>
             <scope>test</scope>
         </dependency>
-    </dependencies>
 
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

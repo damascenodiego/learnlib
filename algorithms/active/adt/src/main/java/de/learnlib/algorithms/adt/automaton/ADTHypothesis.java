@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,13 +15,10 @@
  */
 package de.learnlib.algorithms.adt.automaton;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import de.learnlib.algorithms.adt.adt.ADTNode;
 import de.learnlib.api.AccessSequenceTransformer;
 import net.automatalib.automata.base.fast.AbstractFastMutableDet;
-import net.automatalib.automata.transout.MutableMealyMachine;
+import net.automatalib.automata.transducers.MutableMealyMachine;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 
@@ -42,13 +39,11 @@ public class ADTHypothesis<I, O> extends AbstractFastMutableDet<ADTState<I, O>, 
         super(alphabet);
     }
 
-    @Nonnull
     @Override
     public ADTState<I, O> getSuccessor(final ADTTransition<I, O> transition) {
         return transition.getTarget();
     }
 
-    @Nonnull
     public ADTTransition<I, O> createOpenTransition(final ADTState<I, O> source,
                                                     final I input,
                                                     final ADTNode<ADTState<I, O>, I, O> siftTarget) {
@@ -83,9 +78,8 @@ public class ADTHypothesis<I, O> extends AbstractFastMutableDet<ADTState<I, O>, 
         return new ADTState<>(inputAlphabet.size());
     }
 
-    @Nonnull
     @Override
-    public ADTTransition<I, O> createTransition(final ADTState<I, O> successor, @Nullable final O properties) {
+    public ADTTransition<I, O> createTransition(final ADTState<I, O> successor, final O properties) {
         ADTTransition<I, O> result = new ADTTransition<>();
         result.setTarget(successor);
         result.setOutput(properties);
@@ -93,11 +87,10 @@ public class ADTHypothesis<I, O> extends AbstractFastMutableDet<ADTState<I, O>, 
     }
 
     @Override
-    public void setTransitionOutput(final ADTTransition<I, O> transition, @Nullable final O output) {
+    public void setTransitionOutput(final ADTTransition<I, O> transition, final O output) {
         transition.setOutput(output);
     }
 
-    @Nullable
     @Override
     public O getTransitionOutput(final ADTTransition<I, O> transition) {
         return transition.getOutput();
@@ -105,12 +98,16 @@ public class ADTHypothesis<I, O> extends AbstractFastMutableDet<ADTState<I, O>, 
 
     @Override
     public Word<I> transformAccessSequence(final Word<I> word) {
-        return this.getState(word).getAccessSequence();
+        final ADTState<I, O> state = this.getState(word);
+        assert state != null;
+        return state.getAccessSequence();
     }
 
     @Override
     public boolean isAccessSequence(final Word<I> word) {
-        return this.getState(word).getAccessSequence().equals(word);
+        final ADTState<I, O> state = this.getState(word);
+        assert state != null;
+        return state.getAccessSequence().equals(word);
     }
 
 }

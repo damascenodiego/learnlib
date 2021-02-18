@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,9 +23,8 @@ import java.util.List;
 import de.learnlib.algorithms.discriminationtree.hypothesis.DTLearnerHypothesis;
 import de.learnlib.algorithms.discriminationtree.hypothesis.HState;
 import de.learnlib.algorithms.discriminationtree.hypothesis.HTransition;
+import de.learnlib.api.Resumable;
 import de.learnlib.api.algorithm.LearningAlgorithm;
-import de.learnlib.api.algorithm.feature.ResumableLearner;
-import de.learnlib.api.algorithm.feature.SupportsGrowingAlphabet;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.api.query.Query;
@@ -34,17 +33,17 @@ import de.learnlib.counterexamples.LocalSuffixFinders;
 import de.learnlib.datastructure.discriminationtree.model.AbstractWordBasedDTNode;
 import de.learnlib.datastructure.discriminationtree.model.AbstractWordBasedDiscriminationTree;
 import de.learnlib.util.MQUtil;
+import net.automatalib.SupportsGrowingAlphabet;
 import net.automatalib.automata.concepts.SuffixOutput;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 import net.automatalib.words.impl.Alphabets;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public abstract class AbstractDTLearner<M extends SuffixOutput<I, D>, I, D, SP, TP>
-        implements LearningAlgorithm<M, I, D>,
-                   SupportsGrowingAlphabet<I>,
-                   ResumableLearner<DTLearnerState<I, D, SP, TP>> {
+        implements LearningAlgorithm<M, I, D>, SupportsGrowingAlphabet<I>, Resumable<DTLearnerState<I, D, SP, TP>> {
 
-    protected Alphabet<I> alphabet;
+    protected final Alphabet<I> alphabet;
     private final MembershipOracle<I, D> oracle;
     private final LocalSuffixFinder<? super I, ? super D> suffixFinder;
     private final boolean repeatedCounterexampleEvaluation;
@@ -69,7 +68,7 @@ public abstract class AbstractDTLearner<M extends SuffixOutput<I, D>, I, D, SP, 
 
     @Override
     public void startLearning() {
-        HState<I, D, SP, TP> init = hypothesis.getInitialState();
+        HState<I, D, SP, TP> init = hypothesis.createInitialState();
         AbstractWordBasedDTNode<I, D, HState<I, D, SP, TP>> initDt = dtree.sift(init.getAccessSequence());
         if (initDt.getData() != null) {
             throw new IllegalStateException("Decision tree already contains data");
@@ -87,8 +86,7 @@ public abstract class AbstractDTLearner<M extends SuffixOutput<I, D>, I, D, SP, 
             return false;
         }
         if (repeatedCounterexampleEvaluation) {
-            while (refineHypothesisSingle(ceQuery)) {
-            }
+            while (refineHypothesisSingle(ceQuery)) {}
         }
         return true;
     }
@@ -107,10 +105,12 @@ public abstract class AbstractDTLearner<M extends SuffixOutput<I, D>, I, D, SP, 
         Word<I> input = ceQuery.getInput();
         Word<I> oldStateAs = input.prefix(suffixIdx);
         HState<I, D, SP, TP> oldState = hypothesis.getState(oldStateAs);
+        assert oldState != null;
         AbstractWordBasedDTNode<I, D, HState<I, D, SP, TP>> oldDt = oldState.getDTLeaf();
 
         Word<I> newPredAs = input.prefix(suffixIdx - 1);
         HState<I, D, SP, TP> newPred = hypothesis.getState(newPredAs);
+        assert newPred != null;
         I transSym = input.getSymbol(suffixIdx - 1);
         int transIdx = alphabet.getSymbolIndex(transSym);
         HTransition<I, D, SP, TP> trans = newPred.getTransition(transIdx);
@@ -149,9 +149,8 @@ public abstract class AbstractDTLearner<M extends SuffixOutput<I, D>, I, D, SP, 
     }
 
     protected void updateHypothesis() {
-        HTransition<I, D, SP, TP> current;
-        while ((current = openTransitions.poll()) != null) {
-            updateTransition(current);
+        while (!openTransitions.isEmpty()) {
+            updateTransitions();
         }
 
         List<Query<I, D>> queries = new ArrayList<>();
@@ -174,28 +173,43 @@ public abstract class AbstractDTLearner<M extends SuffixOutput<I, D>, I, D, SP, 
         oracle.processQueries(queries);
     }
 
-    protected void updateTransition(HTransition<I, D, SP, TP> trans) {
-        if (trans.isTree()) {
-            return;
+    protected void updateTransitions() {
+        final List<HTransition<I, D, SP, TP>> transitionsToSift = new ArrayList<>(openTransitions.size());
+        final List<AbstractWordBasedDTNode<I, D, HState<I, D, SP, TP>>> nodes = new ArrayList<>(openTransitions.size());
+        final List<Word<I>> prefixes = new ArrayList<>(openTransitions.size());
+
+        for (HTransition<I, D, SP, TP> t : openTransitions) {
+            if (!t.isTree()) {
+                transitionsToSift.add(t);
+                nodes.add(t.getDT());
+                prefixes.add(t.getAccessSequence());
+            }
         }
 
-        AbstractWordBasedDTNode<I, D, HState<I, D, SP, TP>> currDt = trans.getDT();
-        currDt = dtree.sift(currDt, trans.getAccessSequence());
-        trans.setDT(currDt);
+        openTransitions.clear();
 
-        HState<I, D, SP, TP> state = currDt.getData();
-        if (state == null) {
-            state = createState(trans);
-            currDt.setData(state);
-            state.setDTLeaf(currDt);
-        } else {
-            state.addNonTreeIncoming(trans);
+        final List<AbstractWordBasedDTNode<I, D, HState<I, D, SP, TP>>> results = dtree.sift(nodes, prefixes);
+
+        for (int i = 0; i < transitionsToSift.size(); i++) {
+            final HTransition<I, D, SP, TP> trans = transitionsToSift.get(i);
+            final AbstractWordBasedDTNode<I, D, HState<I, D, SP, TP>> currDt = results.get(i);
+
+            trans.setDT(currDt);
+
+            HState<I, D, SP, TP> state = currDt.getData();
+            if (state == null) {
+                state = createState(trans);
+                currDt.setData(state);
+                state.setDTLeaf(currDt);
+            } else {
+                state.addNonTreeIncoming(trans);
+            }
         }
     }
 
-    protected abstract Query<I, D> spQuery(HState<I, D, SP, TP> state);
+    protected abstract @Nullable Query<I, D> spQuery(HState<I, D, SP, TP> state);
 
-    protected abstract Query<I, D> tpQuery(HTransition<I, D, SP, TP> transition);
+    protected abstract @Nullable Query<I, D> tpQuery(HTransition<I, D, SP, TP> transition);
 
     protected HState<I, D, SP, TP> createState(HTransition<I, D, SP, TP> trans) {
         HState<I, D, SP, TP> newState = hypothesis.createState(trans);
@@ -216,28 +230,27 @@ public abstract class AbstractDTLearner<M extends SuffixOutput<I, D>, I, D, SP, 
     @Override
     public void addAlphabetSymbol(I symbol) {
 
-        if (this.alphabet.containsSymbol(symbol)) {
-            return;
+        if (!this.alphabet.containsSymbol(symbol)) {
+            Alphabets.toGrowingAlphabetOrThrowException(this.alphabet).addSymbol(symbol);
         }
-
-        final int newSymbolIdx = this.alphabet.size();
 
         this.hypothesis.addAlphabetSymbol(symbol);
 
-        // since we share the alphabet instance with our hypothesis, our alphabet might have already been updated (if it
-        // was already a GrowableAlphabet)
-        if (!this.alphabet.containsSymbol(symbol)) {
-            this.alphabet = Alphabets.withNewSymbol(this.alphabet, symbol);
-        }
+        // check if we already have information about the symbol (then the transition is defined) so we don't post
+        // redundant queries
+        if (this.hypothesis.getInitialState() != null &&
+            this.hypothesis.getSuccessor(this.hypothesis.getInitialState(), symbol) == null) {
+            final int newSymbolIdx = this.alphabet.getSymbolIndex(symbol);
 
-        for (final HState<I, D, SP, TP> s : this.hypothesis.getStates()) {
-            final HTransition<I, D, SP, TP> newTrans = new HTransition<>(s, symbol, dtree.getRoot());
-            s.setTransition(newSymbolIdx, newTrans);
-            newTransitions.add(newTrans);
-            openTransitions.add(newTrans);
-        }
+            for (final HState<I, D, SP, TP> s : this.hypothesis.getStates()) {
+                final HTransition<I, D, SP, TP> newTrans = new HTransition<>(s, symbol, dtree.getRoot());
+                s.setTransition(newSymbolIdx, newTrans);
+                newTransitions.add(newTrans);
+                openTransitions.add(newTrans);
+            }
 
-        this.updateHypothesis();
+            this.updateHypothesis();
+        }
     }
 
     @Override
@@ -252,7 +265,11 @@ public abstract class AbstractDTLearner<M extends SuffixOutput<I, D>, I, D, SP, 
         this.dtree.setOracle(oracle);
     }
 
-    public static class BuilderDefaults {
+    public static final class BuilderDefaults {
+
+        private BuilderDefaults() {
+            // prevent instantiation
+        }
 
         public static <I, O> LocalSuffixFinder<? super I, ? super O> suffixFinder() {
             return LocalSuffixFinders.RIVEST_SCHAPIRE;

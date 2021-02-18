@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Copyright (C) 2013-2018 TU Dortmund
+Copyright (C) 2013-2020 TU Dortmund
 This file is part of LearnLib, http://www.learnlib.de/.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,16 +17,20 @@ limitations under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>de.learnlib</groupId>
         <artifactId>learnlib-algorithms-active-parent</artifactId>
-        <version>0.13.1</version>
+        <version>0.16.0</version>
     </parent>
-    <name>LearnLib :: Algorithms :: NL*</name>
+
     <artifactId>learnlib-nlstar</artifactId>
+
+    <name>LearnLib :: Algorithms :: NL*</name>
     <description>A variant of the L* algorithm for inferring non-deterministic hypothesis automata.</description>
 
     <dependencies>
+        <!-- internal -->
         <dependency>
             <groupId>de.learnlib</groupId>
             <artifactId>learnlib-api</artifactId>
@@ -35,6 +39,8 @@ limitations under the License.
             <groupId>de.learnlib</groupId>
             <artifactId>learnlib-util</artifactId>
         </dependency>
+
+        <!-- external -->
         <dependency>
             <groupId>net.automatalib</groupId>
             <artifactId>automata-api</artifactId>
@@ -47,25 +53,37 @@ limitations under the License.
             <groupId>net.automatalib</groupId>
             <artifactId>automata-util</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.checkerframework</groupId>
+            <artifactId>checker-qual</artifactId>
+        </dependency>
+
+        <!-- build -->
         <dependency>
             <groupId>com.github.misberner.buildergen</groupId>
             <artifactId>buildergen</artifactId>
-            <scope>provided</scope>
         </dependency>
+
+        <!-- test -->
         <dependency>
             <groupId>de.learnlib.testsupport</groupId>
             <artifactId>learnlib-learner-it-support</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
+            <groupId>de.learnlib</groupId>
+            <artifactId>learnlib-equivalence-oracles</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>de.learnlib</groupId>
             <artifactId>learnlib-membership-oracles</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
         </dependency>
     </dependencies>
 </project>

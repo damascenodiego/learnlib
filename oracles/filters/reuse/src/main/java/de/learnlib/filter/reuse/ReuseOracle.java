@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -68,8 +68,8 @@ public final class ReuseOracle<S, I, O> implements SingleQueryOracleMealy<I, O> 
     /**
      * Default constructor.
      */
-    private ReuseOracle(ReuseOracleBuilder<S, I, O> builder) {
-        this.executableOracles = ThreadLocal.withInitial(builder.oracleSupplier::get);
+    ReuseOracle(ReuseOracleBuilder<S, I, O> builder) {
+        this.executableOracles = ThreadLocal.withInitial(builder.oracleSupplier);
         this.tree = new ReuseTreeBuilder<S, I, O>(builder.alphabet).withSystemStateHandler(builder.systemStateHandler)
                                                                    .withFailureOutputs(builder.failureOutputSymbols)
                                                                    .withInvariantInputs(builder.invariantInputSymbols)

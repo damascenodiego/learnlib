@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -79,19 +79,21 @@ public class BlueFringeEDSMDFA<I> extends BlueFringeRPNIDFA<I> {
             while (blueIter.hasNext()) {
                 final PTATransition<BlueFringePTAState<Boolean, Void>> qbRef = blueIter.next();
                 final BlueFringePTAState<Boolean, Void> qb = qbRef.getTarget();
+                assert qb != null;
 
                 Stream<BlueFringePTAState<Boolean, Void>> stream = pta.redStatesStream();
                 if (super.parallel) {
                     stream = stream.parallel();
                 }
 
+                @SuppressWarnings("nullness") // we filter the null merges
                 final Optional<Pair<RedBlueMerge<Boolean, Void, BlueFringePTAState<Boolean, Void>>, Long>> result =
                         stream.map(qr -> tryMerge(pta, qr, qb))
                               .filter(Objects::nonNull)
-                              .map(merge -> new Pair<>(merge,
-                                                       EDSMUtil.score(merge.toMergedAutomaton(),
-                                                                      super.positive,
-                                                                      super.negative)))
+                              .map(merge -> Pair.of(merge,
+                                                    EDSMUtil.score(merge.toMergedAutomaton(),
+                                                                   super.positive,
+                                                                   super.negative)))
                               .max(Comparator.comparingLong(Pair::getSecond));
 
                 if (result.isPresent()) {
@@ -110,6 +112,7 @@ public class BlueFringeEDSMDFA<I> extends BlueFringeRPNIDFA<I> {
                 }
             }
             if (!promotion) {
+                assert bestMerge != null;
                 blue.remove(bestTransition);
                 bestMerge.apply(pta, blue::add);
             }

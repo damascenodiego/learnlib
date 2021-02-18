@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +15,8 @@
  */
 package de.learnlib.datastructure.list;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 /**
  * Interface for objects that may occur in a {@link IntrusiveList}, either as a value element or the head of the list
  * (which represents the list itself, but does not carry any value).
@@ -28,8 +30,8 @@ package de.learnlib.datastructure.list;
  */
 public interface IntrusiveListElem<T> {
 
-    T getNextElement();
+    @Nullable T getNextElement();
 
-    void setNextElement(T nextBlock);
+    void setNextElement(@Nullable T nextBlock);
 
 }

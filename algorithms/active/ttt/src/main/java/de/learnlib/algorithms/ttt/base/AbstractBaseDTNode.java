@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,8 +17,7 @@ package de.learnlib.algorithms.ttt.base;
 
 import java.util.Iterator;
 
-import de.learnlib.datastructure.discriminationtree.iterators.NodesIterator;
-import de.learnlib.datastructure.discriminationtree.iterators.TransformingLeavesIterator;
+import de.learnlib.datastructure.discriminationtree.iterators.DiscriminationTreeIterators;
 import de.learnlib.datastructure.discriminationtree.model.AbstractTemporaryIntrusiveDTNode;
 import de.learnlib.datastructure.list.IntrusiveListElem;
 import net.automatalib.words.Word;
@@ -45,6 +44,7 @@ public abstract class AbstractBaseDTNode<I, D>
         return curr.data;
     }
 
+    @Override
     public AbstractBaseDTNode<I, D> anyChild() {
         assert isInner();
         return children.values().iterator().next();
@@ -55,7 +55,7 @@ public abstract class AbstractBaseDTNode<I, D>
     }
 
     public Iterator<TTTState<I, D>> subtreeStatesIterator() {
-        return new TransformingLeavesIterator<>(this, AbstractBaseDTNode::getData);
+        return DiscriminationTreeIterators.transformingLeafIterator(this, AbstractBaseDTNode::getData);
     }
 
     public IncomingList<I, D> getIncoming() {
@@ -63,7 +63,7 @@ public abstract class AbstractBaseDTNode<I, D>
     }
 
     public Iterator<AbstractBaseDTNode<I, D>> subtreeNodesIterator() {
-        return new NodesIterator<>(this);
+        return DiscriminationTreeIterators.nodeIterator(this);
     }
 
     /**

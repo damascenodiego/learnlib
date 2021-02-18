@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,20 +19,22 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import net.automatalib.commons.util.array.RichArray;
+import net.automatalib.commons.smartcollections.ArrayStorage;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public abstract class AbstractBasePTAState<SP, TP, S extends AbstractBasePTAState<SP, TP, S>> implements Cloneable {
 
     protected SP property;
-    protected RichArray<TP> transProperties;
-    protected RichArray<S> successors;
+    protected @MonotonicNonNull ArrayStorage<TP> transProperties;
+    protected @MonotonicNonNull ArrayStorage<S> successors;
     protected int id = -1;
 
     public SP getStateProperty() {
         return property;
     }
 
-    public TP getTransProperty(int index) {
+    public @Nullable TP getTransProperty(int index) {
         if (transProperties == null) {
             return null;
         }
@@ -43,7 +45,7 @@ public abstract class AbstractBasePTAState<SP, TP, S extends AbstractBasePTAStat
         return copy((transProperties != null) ? transProperties.clone() : null);
     }
 
-    public S copy(RichArray<TP> newTPs) {
+    public S copy(@Nullable ArrayStorage<TP> newTPs) {
         try {
             @SuppressWarnings("unchecked")
             S copy = (S) clone();
@@ -57,7 +59,7 @@ public abstract class AbstractBasePTAState<SP, TP, S extends AbstractBasePTAStat
         }
     }
 
-    public S getSuccessor(int index) {
+    public @Nullable S getSuccessor(int index) {
         if (successors == null) {
             return null;
         }
@@ -66,19 +68,19 @@ public abstract class AbstractBasePTAState<SP, TP, S extends AbstractBasePTAStat
 
     public void setSuccessor(int index, S succ, int alphabetSize) {
         if (successors == null) {
-            successors = new RichArray<>(alphabetSize);
+            successors = new ArrayStorage<>(alphabetSize);
         }
-        successors.update(index, succ);
+        successors.set(index, succ);
     }
 
     public S getOrCreateSuccessor(int index, int alphabetSize) {
         if (successors == null) {
-            successors = new RichArray<>(alphabetSize);
+            successors = new ArrayStorage<>(alphabetSize);
         }
         S succ = successors.get(index);
         if (succ == null) {
             succ = createSuccessor(index);
-            successors.update(index, succ);
+            successors.set(index, succ);
         }
         return succ;
     }
@@ -112,10 +114,10 @@ public abstract class AbstractBasePTAState<SP, TP, S extends AbstractBasePTAStat
                 return Objects.equals(oldTp, newTP);
             }
         } else {
-            transProperties = new RichArray<>(alphabetSize);
+            transProperties = new ArrayStorage<>(alphabetSize);
         }
 
-        transProperties.update(index, newTP);
+        transProperties.set(index, newTP);
         return true;
     }
 
@@ -138,5 +140,9 @@ public abstract class AbstractBasePTAState<SP, TP, S extends AbstractBasePTAStat
             return Stream.empty();
         }
         return successors.stream().filter(Objects::nonNull);
+    }
+
+    public SP getProperty() {
+        return property;
     }
 }

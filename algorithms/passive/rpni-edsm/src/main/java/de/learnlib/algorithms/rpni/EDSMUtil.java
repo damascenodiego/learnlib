@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,8 +26,7 @@ import net.automatalib.automata.concepts.StateIDs;
  */
 final class EDSMUtil {
 
-    private EDSMUtil() {
-    }
+    private EDSMUtil() {}
 
     static <S> long score(UniversalDeterministicAutomaton<S, Integer, ?, Boolean, ?> pta,
                           List<int[]> positiveSamples,

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,101 +15,107 @@
  */
 package de.learnlib.oracle.parallelism;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
 
-import de.learnlib.api.oracle.MembershipOracle;
+import de.learnlib.api.oracle.parallelism.ParallelOracle;
+import de.learnlib.api.oracle.parallelism.ThreadPool.PoolPolicy;
 import de.learnlib.api.query.Query;
-import de.learnlib.oracle.parallelism.ParallelOracle.PoolPolicy;
-import net.automatalib.words.Word;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
-@Test
-public class DynamicParallelOracleTest {
+public class DynamicParallelOracleTest extends AbstractDynamicParallelOracleTest<Void> {
 
-    @Test
-    public void testDistinctQueries() {
-        ParallelOracle<Void, Void> oracle = ParallelOracleBuilders.newDynamicParallelOracle(new NullOracle())
-                                                                  .withBatchSize(1)
-                                                                  .withPoolSize(4)
-                                                                  .withPoolPolicy(PoolPolicy.CACHED)
-                                                                  .create();
+    @Override
+    protected DynamicParallelOracleBuilder<Void, Void> getBuilder() {
+        return ParallelOracleBuilders.newDynamicParallelOracle(Arrays.asList(new NullOracle(),
+                                                                             new NullOracle(),
+                                                                             new NullOracle()));
+    }
+
+    @Test(dataProvider = "policies", dataProviderClass = Utils.class, timeOut = 2000)
+    public void testThreadCreation(PoolPolicy poolPolicy) {
+
+        final List<AnswerOnceQuery<Void>> queries = createQueries(10);
+        final int expectedThreads = queries.size();
+
+        final CountDownLatch latch = new CountDownLatch(expectedThreads);
+        final NullOracle[] oracles = new NullOracle[expectedThreads];
+
+        for (int i = 0; i < expectedThreads; i++) {
+            oracles[i] = new NullOracle() {
+
+                @Override
+                public void processQueries(Collection<? extends Query<Void, Void>> queries) {
+                    try {
+                        latch.countDown();
+                        latch.await();
+                    } catch (InterruptedException e) {
+                        throw new IllegalStateException(e);
+                    }
+                    super.processQueries(queries);
+                }
+            };
+        }
+
+        final ParallelOracle<Void, Void> oracle = ParallelOracleBuilders.newDynamicParallelOracle(oracles[0],
+                                                                                                  Arrays.copyOfRange(
+                                                                                                          oracles,
+                                                                                                          1,
+                                                                                                          oracles.length))
+                                                                        .withBatchSize(1)
+                                                                        .withPoolSize(oracles.length)
+                                                                        .withPoolPolicy(poolPolicy)
+                                                                        .create();
 
         try {
-            List<AnswerOnceQuery> queries = createQueries(100);
-
+            // this method only returns, if 'expectedThreads' threads are spawned, which all decrease the shared latch
             oracle.processQueries(queries);
-
-            for (AnswerOnceQuery query : queries) {
-                Assert.assertTrue(query.answered.get());
-            }
         } finally {
             oracle.shutdown();
         }
     }
 
-    private static List<AnswerOnceQuery> createQueries(int numQueries) {
-        List<AnswerOnceQuery> queries = new ArrayList<>(numQueries);
+    @Test(dataProvider = "policies", dataProviderClass = Utils.class, timeOut = 2000)
+    public void testThreadScheduling(PoolPolicy poolPolicy) {
 
-        for (int i = 0; i < numQueries; i++) {
-            queries.add(new AnswerOnceQuery());
-        }
+        final List<AnswerOnceQuery<Void>> queries = createQueries(10);
+        final CountDownLatch latch = new CountDownLatch(queries.size() - 1);
 
-        return queries;
-    }
+        final NullOracle awaitingOracle = new NullOracle() {
 
-    @Test(expectedExceptions = IllegalStateException.class)
-    public void testDuplicateQueries() {
-        ParallelOracle<Void, Void> oracle = ParallelOracleBuilders.newDynamicParallelOracle(new NullOracle())
-                                                                  .withBatchSize(1)
-                                                                  .withPoolSize(4)
-                                                                  .withPoolPolicy(PoolPolicy.CACHED)
-                                                                  .create();
+            @Override
+            public void processQueries(Collection<? extends Query<Void, Void>> queries) {
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    throw new IllegalStateException(e);
+                }
+                super.processQueries(queries);
+            }
+        };
+
+        final NullOracle countDownOracle = new NullOracle() {
+
+            @Override
+            public void processQueries(Collection<? extends Query<Void, Void>> queries) {
+                latch.countDown();
+                super.processQueries(queries);
+            }
+        };
+
+        final ParallelOracle<Void, Void> oracle =
+                ParallelOracleBuilders.newDynamicParallelOracle(awaitingOracle, countDownOracle)
+                                      .withPoolSize(2)
+                                      .withPoolPolicy(poolPolicy)
+                                      .create();
+
         try {
-            List<AnswerOnceQuery> queries = new ArrayList<>(createQueries(100));
-            queries.add(queries.get(0));
-
+            // this method only returns, if the countDownOracle was scheduled 9 times to unblock the awaitingOracle
             oracle.processQueries(queries);
         } finally {
             oracle.shutdown();
         }
     }
-
-    private static final class NullOracle implements MembershipOracle<Void, Void> {
-
-        @Override
-        public void processQueries(Collection<? extends Query<Void, Void>> queries) {
-            for (Query<Void, Void> q : queries) {
-                q.answer(null);
-            }
-        }
-    }
-
-    private static final class AnswerOnceQuery extends Query<Void, Void> {
-
-        private final AtomicBoolean answered = new AtomicBoolean(false);
-
-        @Override
-        public void answer(Void output) {
-            boolean wasAnswered = answered.getAndSet(true);
-            if (wasAnswered) {
-                throw new IllegalStateException("Query was already answered");
-            }
-        }
-
-        @Override
-        public Word<Void> getPrefix() {
-            return Word.epsilon();
-        }
-
-        @Override
-        public Word<Void> getSuffix() {
-            return Word.epsilon();
-        }
-
-    }
-
 }

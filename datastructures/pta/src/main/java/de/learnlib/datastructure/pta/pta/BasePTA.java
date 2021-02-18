@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,22 +31,18 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import javax.annotation.Nonnegative;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Iterators;
 import net.automatalib.automata.MutableDeterministic;
 import net.automatalib.automata.UniversalDeterministicAutomaton;
 import net.automatalib.commons.util.Pair;
-import net.automatalib.commons.util.functions.FunctionsUtil;
 import net.automatalib.graphs.Graph;
 import net.automatalib.util.automata.Automata;
 import net.automatalib.visualization.DefaultVisualizationHelper;
 import net.automatalib.visualization.VisualizationHelper;
 import net.automatalib.words.Alphabet;
+import org.checkerframework.checker.index.qual.NonNegative;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Base class for prefix tree acceptors.
@@ -60,13 +56,10 @@ import net.automatalib.words.Alphabet;
  *
  * @author Malte Isberner
  */
-@ParametersAreNonnullByDefault
 public class BasePTA<SP, TP, S extends AbstractBasePTAState<SP, TP, S>>
         implements UniversalDeterministicAutomaton<S, Integer, PTATransition<S>, SP, TP> {
 
-    @Nonnegative
-    protected final int alphabetSize;
-    @Nonnull
+    protected final @NonNegative int alphabetSize;
     protected final S root;
 
     /**
@@ -77,7 +70,7 @@ public class BasePTA<SP, TP, S extends AbstractBasePTAState<SP, TP, S>>
      * @param root
      *         the root state
      */
-    public BasePTA(@Nonnegative int alphabetSize, S root) {
+    public BasePTA(@NonNegative int alphabetSize, S root) {
         this.alphabetSize = alphabetSize;
         this.root = Objects.requireNonNull(root);
     }
@@ -91,8 +84,7 @@ public class BasePTA<SP, TP, S extends AbstractBasePTAState<SP, TP, S>>
      *
      * @return the state reached by this word, or {@code null} if there is no path for the given word in the PTA
      */
-    @Nullable
-    public S getState(int[] word) {
+    public @Nullable S getState(int[] word) {
         S curr = root;
         int len = word.length;
         for (int i = 0; i < len && curr != null; i++) {
@@ -126,7 +118,6 @@ public class BasePTA<SP, TP, S extends AbstractBasePTAState<SP, TP, S>>
      * @return the state reached by this word, which might have been newly created (along with all required predecessor
      * states)
      */
-    @Nonnull
     public S getOrCreateState(int[] word) {
         S curr = root;
         for (int sym : word) {
@@ -170,7 +161,6 @@ public class BasePTA<SP, TP, S extends AbstractBasePTAState<SP, TP, S>>
      *
      * @return the root state
      */
-    @Nonnull
     public S getRoot() {
         return root;
     }
@@ -208,16 +198,12 @@ public class BasePTA<SP, TP, S extends AbstractBasePTAState<SP, TP, S>>
                                               Function<? super SP, ? extends SP2> spExtractor,
                                               Function<? super TP, ? extends TP2> tpExtractor) {
 
-        final Function<? super SP, ? extends SP2> safeSPExtractor = FunctionsUtil.safeDefault(spExtractor);
-        final Function<? super TP, ? extends TP2> safeTPExtractor = FunctionsUtil.safeDefault(tpExtractor);
-
         Map<S, S2> resultStates = new HashMap<>();
-
         Queue<Pair<S, S2>> queue = new ArrayDeque<>();
 
-        SP2 initProp = safeSPExtractor.apply(root.getStateProperty());
+        SP2 initProp = spExtractor.apply(root.getStateProperty());
         S2 resultInit = automaton.addInitialState(initProp);
-        queue.add(new Pair<>(root, resultInit));
+        queue.add(Pair.of(root, resultInit));
 
         Pair<S, S2> curr;
         while ((curr = queue.poll()) != null) {
@@ -229,13 +215,13 @@ public class BasePTA<SP, TP, S extends AbstractBasePTAState<SP, TP, S>>
                 if (ptaSucc != null) {
                     S2 resultSucc = resultStates.get(ptaSucc);
                     if (resultSucc == null) {
-                        SP2 prop = safeSPExtractor.apply(ptaSucc.getStateProperty());
+                        SP2 prop = spExtractor.apply(ptaSucc.getStateProperty());
                         resultSucc = automaton.addState(prop);
                         resultStates.put(ptaSucc, resultSucc);
-                        queue.offer(new Pair<>(ptaSucc, resultSucc));
+                        queue.offer(Pair.of(ptaSucc, resultSucc));
                     }
                     I sym = alphabet.getSymbol(i);
-                    TP2 transProp = safeTPExtractor.apply(ptaState.getTransProperty(i));
+                    TP2 transProp = tpExtractor.apply(ptaState.getTransProperty(i));
                     automaton.setTransition(resultState, sym, resultSucc, transProp);
                 }
             }
@@ -249,9 +235,9 @@ public class BasePTA<SP, TP, S extends AbstractBasePTAState<SP, TP, S>>
 
             @Override
             public Collection<PTATransition<S>> getOutgoingEdges(S node) {
-                return IntStream.range(0, alphabetSize)
-                                .filter(i -> node.getSuccessor(i) != null)
-                                .mapToObj(i -> new PTATransition<>(node, i))
+                return IntStream.range(0, Math.min(alphabet.size(), alphabetSize))
+                                .mapToObj(i -> getTransition(node, i))
+                                .filter(Objects::nonNull)
                                 .collect(Collectors.toList());
             }
 
@@ -275,15 +261,19 @@ public class BasePTA<SP, TP, S extends AbstractBasePTAState<SP, TP, S>>
                 return new DefaultVisualizationHelper<S, PTATransition<S>>() {
 
                     @Override
+                    public boolean getNodeProperties(S node, Map<String, String> properties) {
+                        final SP property = node.getProperty();
+                        properties.put(NodeAttrs.LABEL, property == null ? "" : property.toString());
+                        return super.getNodeProperties(node, properties);
+                    }
+
+                    @Override
                     public boolean getEdgeProperties(S src,
                                                      PTATransition<S> edge,
                                                      S tgt,
                                                      Map<String, String> properties) {
-                        if (!super.getEdgeProperties(src, edge, tgt, properties)) {
-                            return false;
-                        }
                         properties.put(EdgeAttrs.LABEL, String.valueOf(alphabet.getSymbol(edge.getIndex())));
-                        return true;
+                        return super.getEdgeProperties(src, edge, tgt, properties);
                     }
                 };
             }
@@ -296,7 +286,6 @@ public class BasePTA<SP, TP, S extends AbstractBasePTAState<SP, TP, S>>
      *
      * @return a breadth-first ordered list of all states in this PTA
      */
-    @Nonnull
     public List<S> bfsStates() {
         List<S> stateList = new ArrayList<>();
         Set<S> visited = new HashSet<>();
@@ -326,7 +315,6 @@ public class BasePTA<SP, TP, S extends AbstractBasePTAState<SP, TP, S>>
      *
      * @return an iterator for iterating over all states in this PTA
      */
-    @Nonnull
     public Iterator<S> bfsIterator() {
         Set<S> visited = new HashSet<>();
         final Deque<S> bfsQueue = new ArrayDeque<>();
@@ -358,7 +346,7 @@ public class BasePTA<SP, TP, S extends AbstractBasePTAState<SP, TP, S>>
     }
 
     @Override
-    public S getSuccessor(S state, Integer input) {
+    public @Nullable S getSuccessor(S state, Integer input) {
         return state.getSuccessor(input);
     }
 
@@ -382,8 +370,8 @@ public class BasePTA<SP, TP, S extends AbstractBasePTAState<SP, TP, S>>
      *
      * @return the number of states in the PTA reachable from the root state
      */
-    @Nonnegative
-    public int countStates() {
+
+    public @NonNegative int countStates() {
         return Iterators.size(bfsIterator());
     }
 
@@ -393,7 +381,11 @@ public class BasePTA<SP, TP, S extends AbstractBasePTAState<SP, TP, S>>
     }
 
     @Override
-    public PTATransition<S> getTransition(S state, Integer input) {
+    public @Nullable PTATransition<S> getTransition(S state, Integer input) {
+        if (input == null || state.getSuccessor(input) == null) {
+            return null;
+        }
+
         return new PTATransition<>(state, input);
     }
 

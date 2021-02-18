@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,106 +16,38 @@
 package de.learnlib.filter.cache.mealy;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
+import de.learnlib.api.Resumable;
 import de.learnlib.api.oracle.MembershipOracle;
-import de.learnlib.api.query.Query;
-import de.learnlib.filter.cache.LearningCacheOracle.MealyLearningCacheOracle;
-import net.automatalib.commons.util.array.RichArray;
-import net.automatalib.commons.util.comparison.CmpUtil;
+import de.learnlib.filter.cache.mealy.MealyCacheOracle.MealyCacheOracleState;
 import net.automatalib.commons.util.mappings.Mapping;
 import net.automatalib.incremental.mealy.IncrementalMealyBuilder;
 import net.automatalib.incremental.mealy.dag.IncrementalMealyDAGBuilder;
 import net.automatalib.incremental.mealy.tree.IncrementalMealyTreeBuilder;
+import net.automatalib.incremental.mealy.tree.dynamic.DynamicIncrementalMealyTreeBuilder;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
-import net.automatalib.words.WordBuilder;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Mealy cache. This cache is implemented as a membership oracle: upon construction, it is provided with a delegate
- * oracle. Queries that can be answered from the cache are answered directly, others are forwarded to the delegate
- * oracle. When the delegate oracle has finished processing these remaining queries, the results are incorporated into
- * the cache.
- * <p>
- * This oracle additionally enables the user to define a Mealy-style prefix-closure filter: a {@link Mapping} from
- * output symbols to output symbols may be provided, with the following semantics: If in an output word a symbol for
- * which the given mapping has a non-null value is encountered, all symbols <i>after</i> this symbol are replaced by the
- * respective value. The rationale behind this is that the concrete error message (key in the mapping) is still
- * reflected in the learned model, it is forced to result in a sink state with only a single repeating output symbol
- * (value in the mapping).
- *
- * @param <I>
- *         input symbol class
- * @param <O>
- *         output symbol class
- *
- * @author Malte Isberner
- */
-public class MealyCacheOracle<I, O> implements MealyLearningCacheOracle<I, O> {
+public class MealyCacheOracle<I, O> extends InternalMealyCacheOracle<I, O>
+        implements Resumable<MealyCacheOracleState<I, O>> {
 
-    private final MembershipOracle<I, Word<O>> delegate;
-    private final IncrementalMealyBuilder<I, O> incMealy;
-    private final Lock incMealyLock;
-    private final Comparator<? super Query<I, ?>> queryCmp;
-    private final Mapping<? super O, ? extends O> errorSyms;
+    private static final Logger LOGGER = LoggerFactory.getLogger(MealyCacheOracle.class);
 
-    /**
-     * Constructor.
-     *
-     * @param alphabet
-     *         the input alphabet for the cache
-     * @param delegate
-     *         the delegate Mealy oracle
-     *
-     * @deprecated since 2014-01-23. Use {@link #createDAGCacheOracle(Alphabet, MembershipOracle)} to reproduce old
-     * behavior.
-     */
-    @Deprecated
-    public MealyCacheOracle(Alphabet<I> alphabet, MembershipOracle<I, Word<O>> delegate) {
-        this(alphabet, null, delegate);
+    MealyCacheOracle(IncrementalMealyBuilder<I, O> incrementalBuilder,
+                     @Nullable Mapping<? super O, ? extends O> errorSyms,
+                     MembershipOracle<I, Word<O>> delegate) {
+        super(incrementalBuilder, errorSyms, delegate);
     }
 
-    /**
-     * Constructor.
-     *
-     * @param alphabet
-     *         the input alphabet for the cache
-     * @param errorSyms
-     *         the error symbol mapping (see class description)
-     * @param delegate
-     *         the delegate Mealy oracle
-     *
-     * @deprecated since 2014-01-23. Use {@link #createDAGCacheOracle(Alphabet, Mapping, MembershipOracle)} to reproduce
-     * old behavior.
-     */
-    @Deprecated
-    public MealyCacheOracle(Alphabet<I> alphabet,
-                            Mapping<? super O, ? extends O> errorSyms,
-                            MembershipOracle<I, Word<O>> delegate) {
-        this(new IncrementalMealyDAGBuilder<>(alphabet), errorSyms, delegate);
-    }
-
-    public MealyCacheOracle(IncrementalMealyBuilder<I, O> incrementalBuilder,
-                            Mapping<? super O, ? extends O> errorSyms,
-                            MembershipOracle<I, Word<O>> delegate) {
-        this(incrementalBuilder, new ReentrantLock(), errorSyms, delegate);
-    }
-
-    public MealyCacheOracle(IncrementalMealyBuilder<I, O> incrementalBuilder,
-                            Lock lock,
-                            Mapping<? super O, ? extends O> errorSyms,
-                            MembershipOracle<I, Word<O>> delegate) {
-        this.incMealy = incrementalBuilder;
-        this.incMealyLock = lock;
-        this.queryCmp = new ReverseLexCmp<>(incrementalBuilder.getInputAlphabet());
-        this.errorSyms = errorSyms;
-        this.delegate = delegate;
+    MealyCacheOracle(IncrementalMealyBuilder<I, O> incrementalBuilder,
+                     @Nullable Mapping<? super O, ? extends O> errorSyms,
+                     MembershipOracle<I, Word<O>> delegate,
+                     Comparator<I> comparator) {
+        super(incrementalBuilder, errorSyms, delegate, comparator);
     }
 
     public static <I, O> MealyCacheOracle<I, O> createDAGCacheOracle(Alphabet<I> inputAlphabet,
@@ -124,10 +56,10 @@ public class MealyCacheOracle<I, O> implements MealyLearningCacheOracle<I, O> {
     }
 
     public static <I, O> MealyCacheOracle<I, O> createDAGCacheOracle(Alphabet<I> inputAlphabet,
-                                                                     Mapping<? super O, ? extends O> errorSyms,
+                                                                     @Nullable Mapping<? super O, ? extends O> errorSyms,
                                                                      MembershipOracle<I, Word<O>> delegate) {
         IncrementalMealyBuilder<I, O> incrementalBuilder = new IncrementalMealyDAGBuilder<>(inputAlphabet);
-        return new MealyCacheOracle<>(incrementalBuilder, errorSyms, delegate);
+        return new MealyCacheOracle<>(incrementalBuilder, errorSyms, delegate, inputAlphabet);
     }
 
     public static <I, O> MealyCacheOracle<I, O> createTreeCacheOracle(Alphabet<I> inputAlphabet,
@@ -136,137 +68,52 @@ public class MealyCacheOracle<I, O> implements MealyLearningCacheOracle<I, O> {
     }
 
     public static <I, O> MealyCacheOracle<I, O> createTreeCacheOracle(Alphabet<I> inputAlphabet,
-                                                                      Mapping<? super O, ? extends O> errorSyms,
+                                                                      @Nullable Mapping<? super O, ? extends O> errorSyms,
                                                                       MembershipOracle<I, Word<O>> delegate) {
         IncrementalMealyBuilder<I, O> incrementalBuilder = new IncrementalMealyTreeBuilder<>(inputAlphabet);
+        return new MealyCacheOracle<>(incrementalBuilder, errorSyms, delegate, inputAlphabet);
+    }
+
+    public static <I, O> MealyCacheOracle<I, O> createDynamicTreeCacheOracle(MembershipOracle<I, Word<O>> delegate) {
+        return createDynamicTreeCacheOracle(null, delegate);
+    }
+
+    public static <I, O> MealyCacheOracle<I, O> createDynamicTreeCacheOracle(@Nullable Mapping<? super O, ? extends O> errorSyms,
+                                                                             MembershipOracle<I, Word<O>> delegate) {
+        IncrementalMealyBuilder<I, O> incrementalBuilder = new DynamicIncrementalMealyTreeBuilder<>();
         return new MealyCacheOracle<>(incrementalBuilder, errorSyms, delegate);
     }
 
-    public int getCacheSize() {
-        return incMealy.asGraph().size();
+    @Override
+    public MealyCacheOracleState<I, O> suspend() {
+        return new MealyCacheOracleState<>(incMealy);
     }
 
     @Override
-    public MealyCacheConsistencyTest<I, O> createCacheConsistencyTest() {
-        return new MealyCacheConsistencyTest<>(incMealy, incMealyLock);
+    public void resume(MealyCacheOracleState<I, O> state) {
+        final Class<?> thisClass = this.incMealy.getClass();
+        final Class<?> stateClass = state.getBuilder().getClass();
+
+        if (!thisClass.equals(stateClass)) {
+            LOGGER.warn(
+                    "You currently plan to use a '{}', but the state contained a '{}'. This may yield unexpected behavior.",
+                    thisClass,
+                    stateClass);
+        }
+
+        this.incMealy = state.getBuilder();
     }
 
-    @Override
-    public void processQueries(Collection<? extends Query<I, Word<O>>> queries) {
-        if (queries.isEmpty()) {
-            return;
+    public static class MealyCacheOracleState<I, O> implements Serializable {
+
+        private final IncrementalMealyBuilder<I, O> builder;
+
+        MealyCacheOracleState(IncrementalMealyBuilder<I, O> builder) {
+            this.builder = builder;
         }
 
-        RichArray<Query<I, Word<O>>> qrys = new RichArray<>(queries);
-        qrys.parallelSort(queryCmp);
-
-        List<MasterQuery<I, O>> masterQueries = new ArrayList<>();
-
-        Iterator<Query<I, Word<O>>> it = qrys.iterator();
-        Query<I, Word<O>> q = it.next();
-        Word<I> ref = q.getInput();
-
-        incMealyLock.lock();
-        try {
-            MasterQuery<I, O> master = createMasterQuery(ref);
-            if (!master.isAnswered()) {
-                masterQueries.add(master);
-            }
-            master.addSlave(q);
-
-            while (it.hasNext()) {
-                q = it.next();
-                Word<I> curr = q.getInput();
-                if (!curr.isPrefixOf(ref)) {
-                    master = createMasterQuery(curr);
-                    if (!master.isAnswered()) {
-                        masterQueries.add(master);
-                    }
-                }
-
-                master.addSlave(q);
-                // Update ref to increase the effectiveness of the length check in
-                // isPrefixOf
-                ref = curr;
-            }
-        } finally {
-            incMealyLock.unlock();
-        }
-
-        delegate.processQueries(masterQueries);
-
-        incMealyLock.lock();
-        try {
-            for (MasterQuery<I, O> m : masterQueries) {
-                postProcess(m);
-            }
-        } finally {
-            incMealyLock.unlock();
+        IncrementalMealyBuilder<I, O> getBuilder() {
+            return builder;
         }
     }
-
-    private MasterQuery<I, O> createMasterQuery(Word<I> word) {
-        WordBuilder<O> wb = new WordBuilder<>();
-        if (incMealy.lookup(word, wb)) {
-            return new MasterQuery<>(word, wb.toWord());
-        }
-
-        if (errorSyms == null) {
-            return new MasterQuery<>(word);
-        }
-
-        int wbSize = wb.size();
-
-        if (wbSize == 0) {
-            return new MasterQuery<>(word, errorSyms);
-        }
-
-        O repSym = errorSyms.get(wb.getSymbol(wbSize - 1));
-        if (repSym == null) {
-            return new MasterQuery<>(word, errorSyms);
-        }
-
-        wb.repeatAppend(word.length() - wbSize, repSym);
-        return new MasterQuery<>(word, wb.toWord());
-    }
-
-    private void postProcess(MasterQuery<I, O> master) {
-        Word<I> word = master.getSuffix();
-        Word<O> answer = master.getAnswer();
-
-        if (errorSyms == null) {
-            incMealy.insert(word, answer);
-            return;
-        }
-
-        int answLen = answer.length();
-        int i = 0;
-        while (i < answLen) {
-            O sym = answer.getSymbol(i++);
-            if (errorSyms.get(sym) != null) {
-                break;
-            }
-        }
-
-        if (i == answLen) {
-            incMealy.insert(word, answer);
-        } else {
-            incMealy.insert(word.prefix(i), answer.prefix(i));
-        }
-    }
-
-    private static final class ReverseLexCmp<I> implements Comparator<Query<I, ?>>, Serializable {
-
-        private final Alphabet<I> alphabet;
-
-        ReverseLexCmp(Alphabet<I> alphabet) {
-            this.alphabet = alphabet;
-        }
-
-        @Override
-        public int compare(Query<I, ?> o1, Query<I, ?> o2) {
-            return -CmpUtil.lexCompare(o1.getInput(), o2.getInput(), alphabet);
-        }
-    }
-
 }

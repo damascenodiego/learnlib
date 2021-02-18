@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,10 +15,9 @@
  */
 package de.learnlib.api.exception;
 
-import javax.annotation.Nonnull;
-
 import de.learnlib.api.SUL;
 import de.learnlib.api.oracle.MembershipOracle;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Unchecked exception class that can be used by implementors of a {@link SUL} to wrap any exceptions that occur during
@@ -47,7 +46,7 @@ public class SULException extends RuntimeException {
      * @param cause
      *         the exception cause, should <b>never</b> be a subclass of {@link Error}.
      */
-    public SULException(@Nonnull Throwable cause) {
+    public SULException(@Nullable Throwable cause) {
         super(cause);
     }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import de.learnlib.api.AccessSequenceProvider;
-import net.automatalib.automata.base.fast.AbstractFastDetState;
+import net.automatalib.automata.base.fast.AbstractFastState;
 import net.automatalib.words.Word;
 
 /**
@@ -32,7 +32,7 @@ import net.automatalib.words.Word;
  *
  * @author frohme
  */
-public class ADTState<I, O> extends AbstractFastDetState<ADTState<I, O>, ADTTransition<I, O>>
+public class ADTState<I, O> extends AbstractFastState<ADTTransition<I, O>>
         implements AccessSequenceProvider<I> {
 
     private final Set<ADTTransition<I, O>> incomingTransitions;
@@ -54,7 +54,7 @@ public class ADTState<I, O> extends AbstractFastDetState<ADTState<I, O>, ADTTran
     }
 
     @Override
-    public void clearTransition(final ADTTransition<I, O> transition) {
+    public void clearTransitionObject(final ADTTransition<I, O> transition) {
         if (transition != null) {
             final ADTState<I, O> target = transition.getTarget();
             if (target != null) {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,6 @@
 
 package de.learnlib.filter.statistic;
 
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.statistic.StatisticData;
 
 /**
@@ -26,7 +23,6 @@ import de.learnlib.api.statistic.StatisticData;
  *
  * @author falkhowar
  */
-@ParametersAreNonnullByDefault
 public abstract class AbstractStatisticData implements StatisticData {
 
     private final String name;
@@ -37,19 +33,19 @@ public abstract class AbstractStatisticData implements StatisticData {
         this.unit = unit;
     }
 
-    @Nonnull
+    @Override
     public String getName() {
         return name;
     }
 
-    @Nonnull
+    @Override
     public String getUnit() {
         return unit;
     }
 
-    @Nonnull
+    @Override
     public abstract String getSummary();
 
-    @Nonnull
+    @Override
     public abstract String getDetails();
 }

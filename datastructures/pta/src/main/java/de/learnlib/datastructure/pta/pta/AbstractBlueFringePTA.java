@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,27 +22,23 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import javax.annotation.Nonnegative;
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
+import org.checkerframework.checker.index.qual.NonNegative;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-@ParametersAreNonnullByDefault
 public abstract class AbstractBlueFringePTA<SP, TP, S extends AbstractBlueFringePTAState<SP, TP, S>>
         extends BasePTA<SP, TP, S> {
 
-    @Nonnull
     protected final List<S> redStates = new ArrayList<>();
 
-    public AbstractBlueFringePTA(@Nonnegative int alphabetSize, S root) {
+    public AbstractBlueFringePTA(@NonNegative int alphabetSize, S root) {
         super(alphabetSize, root);
     }
 
-    public S getRedState(@Nonnegative int id) {
+    public S getRedState(@NonNegative int id) {
         return redStates.get(id);
     }
 
-    @Nonnegative
-    public int getNumRedStates() {
+    public @NonNegative int getNumRedStates() {
         return redStates.size();
     }
 
@@ -72,7 +68,7 @@ public abstract class AbstractBlueFringePTA<SP, TP, S extends AbstractBlueFringe
         redStates.add(qb);
     }
 
-    public RedBlueMerge<SP, TP, S> tryMerge(S qr, S qb) {
+    public @Nullable RedBlueMerge<SP, TP, S> tryMerge(S qr, S qb) {
         RedBlueMerge<SP, TP, S> merge = new RedBlueMerge<>(this, qr, qb);
         if (!merge.merge()) {
             return null;

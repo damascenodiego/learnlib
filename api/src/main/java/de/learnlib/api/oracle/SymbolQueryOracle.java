@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,8 +17,6 @@ package de.learnlib.api.oracle;
 
 import java.util.Collection;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.query.Query;
 import net.automatalib.words.Word;
 import net.automatalib.words.WordBuilder;
@@ -34,8 +32,7 @@ import net.automatalib.words.WordBuilder;
  *
  * @author frohme
  */
-@ParametersAreNonnullByDefault
-public interface SymbolQueryOracle<I, O> extends MembershipOracle<I, Word<O>> {
+public interface SymbolQueryOracle<I, O> extends MembershipOracle.MealyMembershipOracle<I, O> {
 
     /**
      * Query the system under learning for a new symbol. <b>This is a stateful operation.</b>

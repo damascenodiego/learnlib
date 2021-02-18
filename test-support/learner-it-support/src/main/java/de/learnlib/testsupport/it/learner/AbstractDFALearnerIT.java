@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,7 @@ import java.util.List;
 import de.learnlib.api.oracle.MembershipOracle.DFAMembershipOracle;
 import de.learnlib.examples.LearningExample.DFALearningExample;
 import de.learnlib.examples.LearningExamples;
+import de.learnlib.oracle.equivalence.SimulatorEQOracle;
 import de.learnlib.oracle.membership.SimulatorOracle.DFASimulatorOracle;
 import de.learnlib.testsupport.it.learner.LearnerVariantList.DFALearnerVariantList;
 import de.learnlib.testsupport.it.learner.LearnerVariantListImpl.DFALearnerVariantListImpl;
@@ -37,7 +38,7 @@ import org.testng.annotations.Factory;
  *
  * @author Malte Isberner
  */
-public abstract class AbstractDFALearnerIT extends AbstractLearnerIT {
+public abstract class AbstractDFALearnerIT {
 
     @Factory
     public Object[] createExampleITCases() {
@@ -58,7 +59,9 @@ public abstract class AbstractDFALearnerIT extends AbstractLearnerIT {
         final DFALearnerVariantListImpl<I> variants = new DFALearnerVariantListImpl<>();
         addLearnerVariants(alphabet, example.getReferenceAutomaton().size(), mqOracle, variants);
 
-        return super.createExampleITCases(example, variants);
+        return LearnerITUtil.createExampleITCases(example,
+                                                  variants,
+                                                  new SimulatorEQOracle<>(example.getReferenceAutomaton()));
     }
 
     /**

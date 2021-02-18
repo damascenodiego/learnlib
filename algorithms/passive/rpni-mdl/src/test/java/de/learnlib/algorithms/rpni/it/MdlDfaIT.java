@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import de.learnlib.algorithms.rpni.BlueFringeMDLDFA;
 import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.testsupport.it.learner.AbstractDFAPassiveLearnerIT;
+import de.learnlib.testsupport.it.learner.LearnerITUtil;
 import de.learnlib.testsupport.it.learner.PassiveLearnerVariantList;
 import net.automatalib.automata.fsa.DFA;
 import net.automatalib.words.Alphabet;
@@ -33,7 +34,7 @@ public class MdlDfaIT extends AbstractDFAPassiveLearnerIT {
     @Override
     protected <I> Collection<DefaultQuery<I, Boolean>> generateSamplesInternal(Alphabet<I> alphabet,
                                                                                DFA<?, I> reference) {
-        final Collection<DefaultQuery<I, Boolean>> samples = super.generateSamples(alphabet, reference);
+        final Collection<DefaultQuery<I, Boolean>> samples = LearnerITUtil.generateSamples(alphabet, reference);
         // filter out negative examples
         return samples.stream().filter(DefaultQuery::getOutput).collect(Collectors.toList());
     }

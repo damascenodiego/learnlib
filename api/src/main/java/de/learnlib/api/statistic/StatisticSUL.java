@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,13 +15,6 @@
  */
 package de.learnlib.api.statistic;
 
-import javax.annotation.Nonnull;
-
 import de.learnlib.api.SUL;
 
-public interface StatisticSUL<I, O> extends SUL<I, O> {
-
-    @Nonnull
-    StatisticData getStatisticalData();
-
-}
+public interface StatisticSUL<I, O> extends SUL<I, O>, StatisticCollector {}

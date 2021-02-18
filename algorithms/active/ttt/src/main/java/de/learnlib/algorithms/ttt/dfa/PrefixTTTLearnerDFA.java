@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,7 @@ import de.learnlib.algorithms.ttt.base.TTTState;
 import de.learnlib.algorithms.ttt.base.TTTTransition;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
-import net.automatalib.commons.util.array.RichArray;
+import net.automatalib.commons.smartcollections.ArrayStorage;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 
@@ -46,17 +46,15 @@ public class PrefixTTTLearnerDFA<I> extends TTTLearnerDFA<I> {
             return false;
         }
 
-        while (refineHypothesisSingle(ceQuery)) {
-        }
+        while (refineHypothesisSingle(ceQuery)) {}
 
         return true;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     protected boolean refineHypothesisSingle(DefaultQuery<I, Boolean> ceQuery) {
-        if (((TTTHypothesisDFA<I>) hypothesis).computeSuffixOutput(ceQuery.getPrefix(), ceQuery.getSuffix())
-                                              .equals(ceQuery.getOutput())) {
+        if (getHypothesisModel().computeSuffixOutput(ceQuery.getPrefix(), ceQuery.getSuffix())
+                                .equals(ceQuery.getOutput())) {
             return false;
         }
 
@@ -73,10 +71,11 @@ public class PrefixTTTLearnerDFA<I> extends TTTLearnerDFA<I> {
             I sym = ceWord.getSymbol(breakpoint);
             Word<I> newDiscr = lca.getDiscriminator().prepend(sym);
             ExtDTNode<I> succHyp = acex.getHypNode(breakpoint + 1);
-            boolean hypOut = lca.subtreeLabel(succHyp);
+            Boolean hypOut = lca.subtreeLabel(succHyp);
+            assert hypOut != null;
             openTransitions.insertAllIncoming(toSplit.getIncoming());
-            ExtDTNode.SplitResult splitResult = toSplit.split(newDiscr, hypOut, !hypOut);
-            link((ExtDTNode<I>) splitResult.nodeOld, splitState);
+            ExtDTNode<I>.SplitResult splitResult = toSplit.split(newDiscr, hypOut, !hypOut);
+            link(splitResult.nodeOld, splitState);
             ExtDTNode<I> extUnlabeled = (ExtDTNode<I>) splitResult.nodeNew;
             extUnlabeled.tempPrefix = currReachInconsLength;
             unlabeledList.addUnlabeled(extUnlabeled);
@@ -176,19 +175,20 @@ public class PrefixTTTLearnerDFA<I> extends TTTLearnerDFA<I> {
     private final class EasyTTTPrefAcex implements AbstractCounterexample<Boolean> {
 
         private final Word<I> ceWord;
-        private final RichArray<ExtDTNode<I>> hypNodes;
-        private final RichArray<ExtDTNode<I>> siftNodes;
+        private final ArrayStorage<ExtDTNode<I>> hypNodes;
+        private final ArrayStorage<ExtDTNode<I>> siftNodes;
 
         EasyTTTPrefAcex(Word<I> ceWord) {
             this.ceWord = ceWord;
-            this.hypNodes = new RichArray<>(ceWord.length() + 1);
-            this.siftNodes = new RichArray<>(ceWord.length() + 1);
+            this.hypNodes = new ArrayStorage<>(ceWord.length() + 1);
+            this.siftNodes = new ArrayStorage<>(ceWord.length() + 1);
 
             update(ceWord.length());
         }
 
         public void update(int len) {
             TTTStateDFA<I> curr = (TTTStateDFA<I>) hypothesis.getInitialState();
+            assert curr != null;
             hypNodes.set(0, (ExtDTNode<I>) curr.getDTLeaf());
             siftNodes.set(0, (ExtDTNode<I>) curr.getDTLeaf());
 

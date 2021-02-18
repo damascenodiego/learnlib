@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,10 +15,6 @@
  */
 package de.learnlib.api.oracle;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import net.automatalib.words.Word;
 
 /**
@@ -29,18 +25,14 @@ import net.automatalib.words.Word;
  *
  * @author Malte Isberner
  */
-@ParametersAreNonnullByDefault
 public interface QueryAnswerer<I, D> {
 
-    @Nullable
     default D answerQuery(Word<I> input) {
         return answerQuery(Word.epsilon(), input);
     }
 
-    @Nullable
     D answerQuery(Word<I> prefix, Word<I> suffix);
 
-    @Nonnull
     default MembershipOracle<I, D> asOracle() {
         return queries -> queries.forEach(q -> q.answer(answerQuery(q.getPrefix(), q.getSuffix())));
     }

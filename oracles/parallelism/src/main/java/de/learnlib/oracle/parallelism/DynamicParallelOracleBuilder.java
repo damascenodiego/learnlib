@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,117 +15,36 @@
  */
 package de.learnlib.oracle.parallelism;
 
+import java.util.Collection;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import javax.annotation.Nonnegative;
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.oracle.MembershipOracle;
-import de.learnlib.oracle.parallelism.ParallelOracle.PoolPolicy;
+import de.learnlib.api.query.Query;
 
 /**
- * Builder class for a {@link DynamicParallelOracle}.
+ * A specialized {@link AbstractDynamicBatchProcessorBuilder} for {@link MembershipOracle}s.
  *
  * @param <I>
  *         input symbol type
  * @param <D>
- *         output type
- *
- * @author Malte Isberner
+ *         output domain type
  */
-@ParametersAreNonnullByDefault
-public class DynamicParallelOracleBuilder<I, D> {
-
-    private static final int DEFAULT_KEEP_ALIVE_TIME = 100;
-    @Nonnull
-    private final Supplier<? extends MembershipOracle<I, D>> oracleSupplier;
-    private ExecutorService customExecutor;
-    @Nonnegative
-    private int batchSize = DynamicParallelOracle.BATCH_SIZE;
-    @Nonnegative
-    private int poolSize = DynamicParallelOracle.POOL_SIZE;
-    @Nonnull
-    private PoolPolicy poolPolicy = DynamicParallelOracle.POOL_POLICY;
+public class DynamicParallelOracleBuilder<I, D>
+        extends AbstractDynamicBatchProcessorBuilder<Query<I, D>, MembershipOracle<I, D>, DynamicParallelOracle<I, D>> {
 
     public DynamicParallelOracleBuilder(Supplier<? extends MembershipOracle<I, D>> oracleSupplier) {
-        this.oracleSupplier = oracleSupplier;
+        super(oracleSupplier);
     }
 
-    @Nonnull
-    public DynamicParallelOracleBuilder<I, D> withCustomExecutor(ExecutorService executor) {
-        this.customExecutor = executor;
-        return this;
+    public DynamicParallelOracleBuilder(Collection<? extends MembershipOracle<I, D>> oracles) {
+        super(oracles);
     }
 
-    @Nonnull
-    public DynamicParallelOracleBuilder<I, D> withDefaultExecutor() {
-        this.customExecutor = null;
-        return this;
+    @Override
+    protected DynamicParallelOracle<I, D> buildOracle(Supplier<? extends MembershipOracle<I, D>> supplier,
+                                                      int batchSize,
+                                                      ExecutorService executorService) {
+        return new DynamicParallelOracle<>(supplier, batchSize, executorService);
     }
-
-    @Nonnull
-    public DynamicParallelOracleBuilder<I, D> withBatchSize(int batchSize) {
-        this.batchSize = batchSize;
-        return this;
-    }
-
-    @Nonnull
-    public DynamicParallelOracleBuilder<I, D> withDefaultBatchSize() {
-        this.batchSize = DynamicParallelOracle.BATCH_SIZE;
-        return this;
-    }
-
-    @Nonnull
-    public DynamicParallelOracleBuilder<I, D> withPoolSize(@Nonnegative int poolSize) {
-        this.poolSize = poolSize;
-        return this;
-    }
-
-    @Nonnull
-    public DynamicParallelOracleBuilder<I, D> withDefaultPoolSize() {
-        this.poolSize = DynamicParallelOracle.POOL_SIZE;
-        return this;
-    }
-
-    @Nonnull
-    public DynamicParallelOracleBuilder<I, D> withDefaultPoolPolicy() {
-        this.poolPolicy = DynamicParallelOracle.POOL_POLICY;
-        return this;
-    }
-
-    @Nonnull
-    public DynamicParallelOracleBuilder<I, D> withPoolPolicy(PoolPolicy policy) {
-        this.poolPolicy = policy;
-        return this;
-    }
-
-    @Nonnull
-    public DynamicParallelOracle<I, D> create() {
-        ExecutorService executor = customExecutor;
-        if (executor == null) {
-            switch (poolPolicy) {
-                case FIXED:
-                    executor = Executors.newFixedThreadPool(poolSize);
-                    break;
-                case CACHED:
-                    executor = new ThreadPoolExecutor(0,
-                                                      poolSize,
-                                                      DEFAULT_KEEP_ALIVE_TIME,
-                                                      TimeUnit.SECONDS,
-                                                      new LinkedBlockingQueue<>());
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown pool policy: " + poolPolicy);
-            }
-        }
-
-        return new DynamicParallelOracle<>(oracleSupplier, batchSize, executor);
-    }
-
 }

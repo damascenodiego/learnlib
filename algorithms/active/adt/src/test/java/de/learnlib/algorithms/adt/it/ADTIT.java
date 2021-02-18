@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@ package de.learnlib.algorithms.adt.it;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import de.learnlib.algorithms.adt.api.ADTExtender;
 import de.learnlib.algorithms.adt.api.LeafSplitter;
@@ -54,6 +55,8 @@ public class ADTIT extends AbstractMealyLearnerIT {
                                                                      SubtreeReplacers.LEVELED_MIN_SIZE,
                                                                      SubtreeReplacers.SINGLE_BEST_EFFORT);
 
+        final Random useCacheGenerator = new Random(42);
+
         for (int i = 0; i < leafSplitters.size(); i++) {
             final LeafSplitter leafSplitter = leafSplitters.get(i);
             builder.setLeafSplitter(leafSplitter);
@@ -65,6 +68,7 @@ public class ADTIT extends AbstractMealyLearnerIT {
                 for (int k = 0; k < subtreeReplacers.size(); k++) {
                     final SubtreeReplacer subtreeReplacer = subtreeReplacers.get(k);
                     builder.setSubtreeReplacer(subtreeReplacer);
+                    builder.setUseObservationTree(useCacheGenerator.nextBoolean());
 
                     variants.addLearnerVariant(i + "," + j + "," + k, builder.create());
                 }

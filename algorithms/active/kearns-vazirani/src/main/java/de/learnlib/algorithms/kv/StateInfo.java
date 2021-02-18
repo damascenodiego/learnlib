@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@ import java.util.List;
 
 import de.learnlib.datastructure.discriminationtree.model.AbstractWordBasedDTNode;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * The information associated with a state: it's access sequence (or access string), and the list of incoming
@@ -36,13 +37,11 @@ import net.automatalib.words.Word;
  */
 public final class StateInfo<I, D> implements Serializable {
 
-    public static final short INTEGER_WORD_WIDTH = 32;
-
     public final int id;
     public final Word<I> accessSequence;
     public AbstractWordBasedDTNode<I, D, StateInfo<I, D>> dtNode;
     //private TLongList incoming;
-    private List<Long> incoming; // TODO: replace with primitive specialization
+    private @Nullable List<Long> incoming; // TODO: replace with primitive specialization
 
     public StateInfo(int id, Word<I> accessSequence) {
         this.accessSequence = accessSequence.trimmed();
@@ -50,7 +49,7 @@ public final class StateInfo<I, D> implements Serializable {
     }
 
     public void addIncoming(int sourceState, int transIdx) {
-        long encodedTrans = ((long) sourceState << INTEGER_WORD_WIDTH) | transIdx;
+        long encodedTrans = ((long) sourceState << Integer.SIZE) | transIdx;
         if (incoming == null) {
             //incoming = new TLongArrayList();
             incoming = new ArrayList<>(); // TODO: replace with primitive specialization

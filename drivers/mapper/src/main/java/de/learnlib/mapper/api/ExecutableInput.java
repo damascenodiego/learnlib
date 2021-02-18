@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +15,7 @@
  */
 package de.learnlib.mapper.api;
 
+import de.learnlib.api.SUL;
 import de.learnlib.api.exception.SULException;
 
 /**
@@ -31,7 +32,10 @@ public interface ExecutableInput<CO> {
      * executes the input.
      *
      * @return concrete output for this input
+     *
+     * @throws SULException
+     *         if the input cannot be executed on the {@link SUL}
      */
-    CO execute() throws SULException;
+    CO execute();
 
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@ package de.learnlib.datastructure.observationtable;
 
 import java.io.Serializable;
 
-import net.automatalib.commons.util.array.ResizingObjectArray;
+import net.automatalib.commons.smartcollections.ResizingArrayStorage;
 import net.automatalib.words.Word;
 
 final class RowImpl<I> implements Row<I>, Serializable {
@@ -27,7 +27,7 @@ final class RowImpl<I> implements Row<I>, Serializable {
 
     private int rowContentId = -1;
     private int lpIndex;
-    private ResizingObjectArray successors;
+    private ResizingArrayStorage<RowImpl<I>> successors;
 
     /**
      * Constructor for short label rows.
@@ -70,12 +70,12 @@ final class RowImpl<I> implements Row<I>, Serializable {
             return;
         }
         lpIndex = -1;
-        this.successors = new ResizingObjectArray(initialAlphabetSize);
+        this.successors = new ResizingArrayStorage<>(RowImpl.class, initialAlphabetSize);
     }
 
-    @SuppressWarnings("unchecked")
+    @Override
     public RowImpl<I> getSuccessor(int inputIdx) {
-        return (RowImpl<I>) successors.array[inputIdx];
+        return successors.array[inputIdx];
     }
 
     /**
@@ -87,18 +87,21 @@ final class RowImpl<I> implements Row<I>, Serializable {
      * @param succ
      *         the successor row
      */
-    void setSuccessor(int inputIdx, Row<I> succ) {
+    void setSuccessor(int inputIdx, RowImpl<I> succ) {
         successors.array[inputIdx] = succ;
     }
 
+    @Override
     public Word<I> getLabel() {
         return label;
     }
 
+    @Override
     public int getRowId() {
         return rowId;
     }
 
+    @Override
     public int getRowContentId() {
         return rowContentId;
     }
@@ -131,9 +134,9 @@ final class RowImpl<I> implements Row<I>, Serializable {
     }
 
     /**
-     * See {@link ResizingObjectArray#ensureCapacity(int)}.
+     * See {@link ResizingArrayStorage#ensureCapacity(int)}.
      */
-    boolean ensureInputCapacity(int capacity) {
-        return this.successors.ensureCapacity(capacity);
+    void ensureInputCapacity(int capacity) {
+        this.successors.ensureCapacity(capacity);
     }
 }

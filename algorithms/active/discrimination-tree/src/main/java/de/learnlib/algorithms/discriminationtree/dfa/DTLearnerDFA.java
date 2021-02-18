@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,7 @@ import de.learnlib.datastructure.discriminationtree.BinaryDTree;
 import net.automatalib.automata.fsa.DFA;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Algorithm for learning DFA using the Discrimination Tree algorithm.
@@ -85,7 +86,7 @@ public class DTLearnerDFA<I> extends AbstractDTLearner<DFA<?, I>, I, Boolean, Bo
     }
 
     @Override
-    protected Query<I, Boolean> tpQuery(HTransition<I, Boolean, Boolean, Void> transition) {
+    protected @Nullable Query<I, Boolean> tpQuery(HTransition<I, Boolean, Boolean, Void> transition) {
         return null;
     }
 
@@ -95,7 +96,11 @@ public class DTLearnerDFA<I> extends AbstractDTLearner<DFA<?, I>, I, Boolean, Bo
         this.hypWrapper = new HypothesisWrapperDFA<>(this.hypothesis);
     }
 
-    public static class BuilderDefaults {
+    public static final class BuilderDefaults {
+
+        private BuilderDefaults() {
+            // prevent instantiation
+        }
 
         public static boolean epsilonRoot() {
             return true;

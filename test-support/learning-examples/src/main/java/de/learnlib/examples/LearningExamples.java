@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,19 +16,24 @@
 package de.learnlib.examples;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
 import de.learnlib.examples.LearningExample.DFALearningExample;
 import de.learnlib.examples.LearningExample.MealyLearningExample;
+import de.learnlib.examples.LearningExample.StateLocalInputMealyLearningExample;
 import de.learnlib.examples.dfa.ExampleAngluin;
 import de.learnlib.examples.dfa.ExampleKeylock;
 import de.learnlib.examples.dfa.ExamplePaulAndMary;
+import de.learnlib.examples.dfa.ExampleTinyDFA;
 import de.learnlib.examples.mealy.ExampleCoffeeMachine;
 import de.learnlib.examples.mealy.ExampleGrid;
 import de.learnlib.examples.mealy.ExampleRandomMealy;
+import de.learnlib.examples.mealy.ExampleRandomStateLocalInputMealy;
 import de.learnlib.examples.mealy.ExampleShahbazGroz;
 import de.learnlib.examples.mealy.ExampleStack;
+import de.learnlib.examples.mealy.ExampleTinyMealy;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.impl.Alphabets;
 
@@ -39,6 +44,7 @@ public final class LearningExamples {
     private static final int GRID_XSIZE = 5;
     private static final int GRID_YSIZE = 5;
     private static final String[] RANDOM_MEALY_OUTPUTS = {"o1", "o2", "o3"};
+    private static final String UNDEFINED_MEALY_OUTPUT = "undefined";
     private static final int KEYLOCK_SIZE = 100;
     private static final long RANDOM_SEED = 1337L;
 
@@ -50,7 +56,8 @@ public final class LearningExamples {
         return Arrays.asList(ExampleAngluin.createExample(),
                              ExamplePaulAndMary.createExample(),
                              ExampleKeylock.createExample(KEYLOCK_SIZE, false),
-                             ExampleKeylock.createExample(KEYLOCK_SIZE, true));
+                             ExampleKeylock.createExample(KEYLOCK_SIZE, true),
+                             ExampleTinyDFA.createExample());
     }
 
     public static List<MealyLearningExample<?, ?>> createMealyExamples() {
@@ -61,7 +68,16 @@ public final class LearningExamples {
                              ExampleRandomMealy.createExample(new Random(RANDOM_SEED),
                                                               RANDOM_ALPHABET,
                                                               RANDOM_SIZE,
-                                                              RANDOM_MEALY_OUTPUTS));
+                                                              RANDOM_MEALY_OUTPUTS),
+                             ExampleTinyMealy.createExample());
+    }
+
+    public static List<StateLocalInputMealyLearningExample<?, ?>> createSLIMealyExamples() {
+        return Collections.singletonList(ExampleRandomStateLocalInputMealy.createExample(new Random(RANDOM_SEED),
+                                                                                         RANDOM_ALPHABET,
+                                                                                         RANDOM_SIZE,
+                                                                                         UNDEFINED_MEALY_OUTPUT,
+                                                                                         RANDOM_MEALY_OUTPUTS));
     }
 
 }

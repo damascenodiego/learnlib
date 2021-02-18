@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,13 +39,13 @@ public class ReuseEdge<S, I, O> {
     /**
      * Default constructor.
      *
-     * @param source,
+     * @param source
      *         not allowed to be {@code null}.
-     * @param target,
+     * @param target
      *         not allowed to be {@code null}.
-     * @param input,
+     * @param input
      *         not allowed to be {@code null}.
-     * @param output,
+     * @param output
      *         in case of quiescence maybe {@code null}.
      */
     public ReuseEdge(final ReuseNode<S, I, O> source, final ReuseNode<S, I, O> target, final I input, final O output) {

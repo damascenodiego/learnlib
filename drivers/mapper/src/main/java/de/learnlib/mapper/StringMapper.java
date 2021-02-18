@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,16 +20,16 @@ import java.util.Map;
 
 import de.learnlib.mapper.api.SULMapper;
 import net.automatalib.words.Alphabet;
-import net.automatalib.words.impl.SimpleAlphabet;
+import net.automatalib.words.impl.GrowingMapAlphabet;
 
 public class StringMapper<CI> implements SULMapper<String, String, CI, Object> {
 
     private final Map<String, CI> inputs = new HashMap<>();
-    private final Alphabet<String> mappedInputs = new SimpleAlphabet<>();
+    private final Alphabet<String> mappedInputs = new GrowingMapAlphabet<>();
 
     public StringMapper(Alphabet<CI> alphabet) {
         for (CI input : alphabet) {
-            String str = input.toString();
+            String str = String.valueOf(input);
             inputs.put(str, input);
             mappedInputs.add(str);
         }

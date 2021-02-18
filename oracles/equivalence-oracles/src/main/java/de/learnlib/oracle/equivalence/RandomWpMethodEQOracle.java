@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,14 +17,23 @@ package de.learnlib.oracle.equivalence;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Random;
 import java.util.stream.Stream;
 
+import de.learnlib.api.oracle.EquivalenceOracle.DFAEquivalenceOracle;
+import de.learnlib.api.oracle.EquivalenceOracle.MealyEquivalenceOracle;
 import de.learnlib.api.oracle.MembershipOracle;
+import de.learnlib.api.oracle.MembershipOracle.DFAMembershipOracle;
+import de.learnlib.api.oracle.MembershipOracle.MealyMembershipOracle;
+import de.learnlib.buildtool.refinement.annotation.GenerateRefinement;
+import de.learnlib.buildtool.refinement.annotation.Generic;
+import de.learnlib.buildtool.refinement.annotation.Interface;
+import de.learnlib.buildtool.refinement.annotation.Map;
 import net.automatalib.automata.UniversalDeterministicAutomaton;
 import net.automatalib.automata.concepts.Output;
 import net.automatalib.automata.fsa.DFA;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.commons.util.mappings.MutableMapping;
 import net.automatalib.util.automata.Automata;
 import net.automatalib.util.automata.cover.Covers;
@@ -34,12 +43,16 @@ import net.automatalib.words.WordBuilder;
 /**
  * Implements an equivalence test by applying the Wp-method test on the given hypothesis automaton, as described in
  * "Test Selection Based on Finite State Models" by S. Fujiwara et al. Instead of enumerating the test suite in order,
- * this is a sampling implementation: 1. sample uniformly from the states for a prefix 2. sample geometrically a random
- * word 3. sample a word from the set of suffixes / state identifiers (either local or global) There are two parameters:
- * minimalSize determines the minimal size of the random word, this is useful when one first performs a W(p)-method with
- * some depth and continue with this randomized tester from that depth onward. The second parameter rndLength determines
- * the expected length of the random word. (The expected length in effect is minimalSize + rndLength.) In the unbounded
- * case it will not terminate for a correct hypothesis.
+ * this is a sampling implementation:
+ * <ul>
+ * <li>1. sample uniformly from the states for a prefix</li>
+ * <li>2. sample geometrically a random word</li>
+ * <li>3. sample a word from the set of suffixes / state identifiers</li>
+ * </ul>
+ * There are two parameters:minimalSize determines the minimal size of the random word, this is useful when one first
+ * performs a W(p)-method with some depth and continue with this randomized tester from that depth onward. The second
+ * parameter rndLength determines the expected length of the random word. (The expected length in effect is minimalSize
+ * + rndLength.) In the unbounded case it will not terminate for a correct hypothesis.
  *
  * @param <A>
  *         automaton type
@@ -50,6 +63,24 @@ import net.automatalib.words.WordBuilder;
  *
  * @author Joshua Moerman
  */
+@GenerateRefinement(name = "DFARandomWpMethodEQOracle",
+                    generics = "I",
+                    parentGenerics = {@Generic(clazz = DFA.class, generics = {"?", "I"}),
+                                      @Generic("I"),
+                                      @Generic(clazz = Boolean.class)},
+                    parameterMapping = @Map(from = MembershipOracle.class,
+                                            to = DFAMembershipOracle.class,
+                                            withGenerics = "I"),
+                    interfaces = @Interface(clazz = DFAEquivalenceOracle.class, generics = "I"))
+@GenerateRefinement(name = "MealyRandomWpMethodEQOracle",
+                    generics = {"I", "O"},
+                    parentGenerics = {@Generic(clazz = MealyMachine.class, generics = {"?", "I", "?", "O"}),
+                                      @Generic("I"),
+                                      @Generic(clazz = Word.class, generics = "O")},
+                    parameterMapping = @Map(from = MembershipOracle.class,
+                                            to = MealyMembershipOracle.class,
+                                            withGenerics = {"I", "O"}),
+                    interfaces = @Interface(clazz = MealyEquivalenceOracle.class, generics = {"I", "O"}))
 public class RandomWpMethodEQOracle<A extends UniversalDeterministicAutomaton<?, I, ?, ?, ?> & Output<I, D>, I, D>
         extends AbstractTestWordEQOracle<A, I, D> {
 
@@ -107,11 +138,7 @@ public class RandomWpMethodEQOracle<A extends UniversalDeterministicAutomaton<?,
                                   int rndLength,
                                   int bound,
                                   int batchSize) {
-        super(sulOracle, batchSize);
-        this.minimalSize = minimalSize;
-        this.rndLength = rndLength;
-        this.bound = bound;
-        this.rand = new Random();
+        this(sulOracle, minimalSize, rndLength, bound, new Random(), batchSize);
     }
 
     /**
@@ -126,7 +153,7 @@ public class RandomWpMethodEQOracle<A extends UniversalDeterministicAutomaton<?,
      * @param bound
      *         specifies the bound (set to 0 for unbounded).
      * @param random
-     *          custom Random generator.
+     *         custom Random generator.
      * @param batchSize
      *         size of the batches sent to the membership oracle
      */
@@ -149,23 +176,23 @@ public class RandomWpMethodEQOracle<A extends UniversalDeterministicAutomaton<?,
         return doGenerateTestWords(aut, inputs);
     }
 
-    protected <S> Stream<Word<I>> doGenerateTestWords(UniversalDeterministicAutomaton<S, I, ?, ?, ?> hypothesis,
-                                                      Collection<? extends I> inputs) {
+    private <S> Stream<Word<I>> doGenerateTestWords(UniversalDeterministicAutomaton<S, I, ?, ?, ?> hypothesis,
+                                                    Collection<? extends I> inputs) {
         // Note that we want to use ArrayLists because we want constant time random access
         // We will sample from this for a prefix
-        ArrayList<Word<I>> stateCover = new ArrayList<>(hypothesis.size());
+        List<Word<I>> stateCover = new ArrayList<>(hypothesis.size());
         Covers.stateCover(hypothesis, inputs, stateCover);
 
         // Then repeatedly from this for a random word
-        ArrayList<I> arrayAlphabet = new ArrayList<>(inputs);
+        List<I> arrayAlphabet = new ArrayList<>(inputs);
 
         // Finally we test the state with a suffix, sometimes a global one, sometimes local
-        ArrayList<Word<I>> globalSuffixes = new ArrayList<>();
+        List<Word<I>> globalSuffixes = new ArrayList<>();
         Automata.characterizingSet(hypothesis, inputs, globalSuffixes);
 
-        MutableMapping<S, ArrayList<Word<I>>> localSuffixSets = hypothesis.createStaticStateMapping();
+        MutableMapping<S, List<Word<I>>> localSuffixSets = hypothesis.createStaticStateMapping();
         for (S state : hypothesis.getStates()) {
-            ArrayList<Word<I>> suffixSet = new ArrayList<>();
+            List<Word<I>> suffixSet = new ArrayList<>();
             Automata.stateCharacterizingSet(hypothesis, inputs, state, suffixSet);
             localSuffixSets.put(state, suffixSet);
         }
@@ -180,10 +207,10 @@ public class RandomWpMethodEQOracle<A extends UniversalDeterministicAutomaton<?,
     }
 
     private <S> Word<I> generateSingleTestWord(UniversalDeterministicAutomaton<S, I, ?, ?, ?> hypothesis,
-                                               ArrayList<Word<I>> stateCover,
-                                               ArrayList<I> arrayAlphabet,
-                                               ArrayList<Word<I>> globalSuffixes,
-                                               MutableMapping<S, ArrayList<Word<I>>> localSuffixSets) {
+                                               List<Word<I>> stateCover,
+                                               List<I> arrayAlphabet,
+                                               List<Word<I>> globalSuffixes,
+                                               MutableMapping<S, List<Word<I>>> localSuffixSets) {
 
         WordBuilder<I> wb = new WordBuilder<>(minimalSize + rndLength + 1);
 
@@ -209,83 +236,12 @@ public class RandomWpMethodEQOracle<A extends UniversalDeterministicAutomaton<?,
         } else {
             // local
             S state2 = hypothesis.getState(wb);
-            ArrayList<Word<I>> localSuffixes = localSuffixSets.get(state2);
+            List<Word<I>> localSuffixes = localSuffixSets.get(state2);
             if (!localSuffixes.isEmpty()) {
                 wb.append(localSuffixes.get(rand.nextInt(localSuffixes.size())));
             }
         }
 
         return wb.toWord();
-    }
-
-    public static class DFARandomWpMethodEQOracle<I>
-            extends RandomWpMethodEQOracle<DFA<?, I>, I, Boolean>
-            implements DFAEquivalenceOracle<I> {
-
-        public DFARandomWpMethodEQOracle(MembershipOracle<I, Boolean> mqOracle,
-                                         int minimalSize,
-                                         int rndLength) {
-            super(mqOracle, minimalSize, rndLength);
-        }
-
-        public DFARandomWpMethodEQOracle(MembershipOracle<I, Boolean> mqOracle,
-                                         int minimalSize,
-                                         int rndLength,
-                                         int bound) {
-            super(mqOracle, minimalSize, rndLength, bound);
-        }
-
-        public DFARandomWpMethodEQOracle(MembershipOracle<I, Boolean> mqOracle,
-                                         int minimalSize,
-                                         int rndLength,
-                                         int bound,
-                                         int batchSize) {
-            super(mqOracle, minimalSize, rndLength, bound, batchSize);
-        }
-
-        public DFARandomWpMethodEQOracle(MembershipOracle<I, Boolean> mqOracle,
-                                         int minimalSize,
-                                         int rndLength,
-                                         int bound,
-                                         Random random,
-                                         int batchSize) {
-            super(mqOracle, minimalSize, rndLength, bound, random, batchSize);
-        }
-
-    }
-
-    public static class MealyRandomWpMethodEQOracle<I, O>
-            extends RandomWpMethodEQOracle<MealyMachine<?, I, ?, O>, I, Word<O>>
-            implements MealyEquivalenceOracle<I, O> {
-
-        public MealyRandomWpMethodEQOracle(MembershipOracle<I, Word<O>> mqOracle,
-                                           int minimalSize,
-                                           int rndLength) {
-            super(mqOracle, minimalSize, rndLength);
-        }
-
-        public MealyRandomWpMethodEQOracle(MembershipOracle<I, Word<O>> mqOracle,
-                                           int minimalSize,
-                                           int rndLength,
-                                           int bound) {
-            super(mqOracle, minimalSize, rndLength, bound);
-        }
-
-        public MealyRandomWpMethodEQOracle(MembershipOracle<I, Word<O>> mqOracle,
-                                           int minimalSize,
-                                           int rndLength,
-                                           int bound,
-                                           int batchSize) {
-            super(mqOracle, minimalSize, rndLength, bound, batchSize);
-        }
-
-        public MealyRandomWpMethodEQOracle(MembershipOracle<I, Word<O>> mqOracle,
-                                           int minimalSize,
-                                           int rndLength,
-                                           int bound,
-                                           Random random,
-                                           int batchSize) {
-            super(mqOracle, minimalSize, rndLength, bound, random, batchSize);
-        }
     }
 }

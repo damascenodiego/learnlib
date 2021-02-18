@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,13 +18,22 @@ package de.learnlib.testsupport.it.learner;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.learnlib.api.oracle.EquivalenceOracle.MealyEquivalenceOracle;
 import de.learnlib.api.oracle.MembershipOracle.MealyMembershipOracle;
+import de.learnlib.driver.util.StateLocalInputMealySimulatorSUL;
 import de.learnlib.examples.LearningExample.MealyLearningExample;
+import de.learnlib.examples.LearningExample.StateLocalInputMealyLearningExample;
 import de.learnlib.examples.LearningExamples;
+import de.learnlib.oracle.equivalence.SimulatorEQOracle;
+import de.learnlib.oracle.equivalence.mealy.StateLocalInputMealySimulatorEQOracle;
 import de.learnlib.oracle.membership.SimulatorOracle.MealySimulatorOracle;
+import de.learnlib.oracle.membership.StateLocalInputSULOracle;
 import de.learnlib.testsupport.it.learner.LearnerVariantList.MealyLearnerVariantList;
 import de.learnlib.testsupport.it.learner.LearnerVariantListImpl.MealyLearnerVariantListImpl;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
+import net.automatalib.automata.transducers.StateLocalInputMealyMachine;
+import net.automatalib.automata.transducers.impl.compact.CompactMealy;
+import net.automatalib.util.automata.transducers.MealyFilter;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 import org.testng.annotations.Factory;
@@ -38,7 +47,7 @@ import org.testng.annotations.Factory;
  *
  * @author Malte Isberner
  */
-public abstract class AbstractMealyLearnerIT extends AbstractLearnerIT {
+public abstract class AbstractMealyLearnerIT {
 
     @Factory
     public Object[] createExampleITCases() {
@@ -47,6 +56,10 @@ public abstract class AbstractMealyLearnerIT extends AbstractLearnerIT {
 
         for (MealyLearningExample<?, ?> example : examples) {
             result.addAll(createAllVariantsITCase(example));
+        }
+
+        for (StateLocalInputMealyLearningExample<?, ?> example : LearningExamples.createSLIMealyExamples()) {
+            result.addAll(createPartialVariantsITCase(example));
         }
 
         return result.toArray();
@@ -60,7 +73,31 @@ public abstract class AbstractMealyLearnerIT extends AbstractLearnerIT {
         final MealyLearnerVariantListImpl<I, O> variants = new MealyLearnerVariantListImpl<>();
         addLearnerVariants(alphabet, mqOracle, variants);
 
-        return super.createExampleITCases(example, variants);
+        return LearnerITUtil.createExampleITCases(example,
+                                                  variants,
+                                                  new SimulatorEQOracle<>(example.getReferenceAutomaton()));
+    }
+
+    private <I, O> List<LearnerVariantITCase<I, Word<O>, MealyMachine<?, I, ?, O>>> createPartialVariantsITCase(
+            StateLocalInputMealyLearningExample<I, O> example) {
+
+        final StateLocalInputMealyMachine<?, I, ?, O> reference = example.getReferenceAutomaton();
+        final Alphabet<I> alphabet = example.getAlphabet();
+        final O undefinedOutput = example.getUndefinedOutput();
+
+        // make sure, our oracle actually receives a partial mealy
+        final CompactMealy<I, O> partialRef =
+                MealyFilter.pruneTransitionsWithOutput(reference, alphabet, undefinedOutput);
+
+        final MealyMembershipOracle<I, O> mqOracle =
+                new StateLocalInputSULOracle<>(new StateLocalInputMealySimulatorSUL<>(partialRef), undefinedOutput);
+        final MealyLearnerVariantListImpl<I, O> variants = new MealyLearnerVariantListImpl<>();
+        addLearnerVariants(alphabet, mqOracle, variants);
+
+        final MealyEquivalenceOracle<I, O> eqOracle =
+                new StateLocalInputMealySimulatorEQOracle<>(partialRef, alphabet, undefinedOutput);
+
+        return LearnerITUtil.createExampleITCases(example, variants, eqOracle);
     }
 
     /**

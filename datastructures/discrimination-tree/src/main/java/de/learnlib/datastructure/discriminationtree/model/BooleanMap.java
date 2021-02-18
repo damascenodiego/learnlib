@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,8 +40,7 @@ public class BooleanMap<V> extends AbstractMap<Boolean, V> implements Serializab
     private V falseValue;
     private V trueValue;
 
-    public BooleanMap() {
-    }
+    public BooleanMap() {}
 
     public BooleanMap(V falseValue, V trueValue) {
         this.falseValue = falseValue;
@@ -177,7 +176,7 @@ public class BooleanMap<V> extends AbstractMap<Boolean, V> implements Serializab
 
     }
 
-    private class Entry implements Map.Entry<Boolean, V> {
+    private final class Entry implements Map.Entry<Boolean, V> {
 
         private final boolean key;
 
@@ -202,7 +201,7 @@ public class BooleanMap<V> extends AbstractMap<Boolean, V> implements Serializab
 
         @Override
         public int hashCode() {
-            return (key) ? 1 : 0;
+            return Boolean.hashCode(key);
         }
 
         @Override
@@ -210,14 +209,12 @@ public class BooleanMap<V> extends AbstractMap<Boolean, V> implements Serializab
             if (this == o) {
                 return true;
             }
-            if (o == null || getClass() != o.getClass()) {
+            if (!(o instanceof BooleanMap.Entry)) {
                 return false;
             }
 
-            @SuppressWarnings("unchecked")
-            Entry entry = (Entry) o;
-
-            return getKey().equals(entry.getKey());
+            final BooleanMap.Entry that = (BooleanMap.Entry) o;
+            return Objects.equals(key, that.key);
         }
     }
 

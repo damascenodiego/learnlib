@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,11 +18,14 @@ package de.learnlib.algorithms.adt.learner;
 import java.util.Random;
 
 import de.learnlib.algorithms.adt.automaton.ADTState;
+import de.learnlib.api.oracle.EquivalenceOracle.MealyEquivalenceOracle;
 import de.learnlib.api.oracle.SymbolQueryOracle;
+import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.driver.util.MealySimulatorSUL;
 import de.learnlib.oracle.membership.SULSymbolQueryOracle;
 import de.learnlib.testsupport.AbstractResumableLearnerTest;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
+import net.automatalib.util.automata.Automata;
 import net.automatalib.util.automata.random.RandomAutomata;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
@@ -47,6 +50,17 @@ public class ADTResumableLearnerTest
     @Override
     protected SymbolQueryOracle<Integer, Character> getOracle(MealyMachine<?, Integer, ?, Character> target) {
         return new SULSymbolQueryOracle<>(new MealySimulatorSUL<>(target));
+    }
+
+    @Override
+    protected MealyEquivalenceOracle<Integer, Character> getEquivalenceOracle(MealyMachine<?, Integer, ?, Character> target) {
+        return (mealy, inputs) -> {
+            final Word<Integer> separatingWord = Automata.findSeparatingWord(target, mealy, inputs);
+            if (separatingWord == null) {
+                return null;
+            }
+            return new DefaultQuery<>(Word.epsilon(), separatingWord, target.computeOutput(separatingWord));
+        };
     }
 
     @Override

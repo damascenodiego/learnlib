@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,8 @@ package de.learnlib.datastructure.list;
 
 import java.io.Serializable;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 /**
  * An element in an {@link IntrusiveList}.
  *
@@ -27,15 +29,15 @@ import java.io.Serializable;
  */
 public class IntrusiveListElemImpl<T> implements IntrusiveListElem<T>, Serializable {
 
-    protected T next;
+    protected @Nullable T next;
 
     @Override
-    public T getNextElement() {
+    public @Nullable T getNextElement() {
         return next;
     }
 
     @Override
-    public void setNextElement(T next) {
+    public void setNextElement(@Nullable T next) {
         this.next = next;
     }
 }

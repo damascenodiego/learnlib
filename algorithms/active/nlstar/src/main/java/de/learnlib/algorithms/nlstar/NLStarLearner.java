@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -229,6 +229,10 @@ public class NLStarLearner<I> implements NFALearner<I> {
             throw new IllegalStateException();
         }
         return hypothesis;
+    }
+
+    public ObservationTable<I> getObservationTable() {
+        return table;
     }
 
 }

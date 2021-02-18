@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +15,10 @@
  */
 package de.learnlib.algorithms.adt.adt;
 
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.oracle.SymbolQueryOracle;
 import net.automatalib.graphs.ads.impl.AbstractRecursiveADSLeafNode;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Leaf node implementation.
@@ -34,7 +32,6 @@ import net.automatalib.words.Word;
  *
  * @author frohme
  */
-@ParametersAreNonnullByDefault
 public class ADTLeafNode<S, I, O> extends AbstractRecursiveADSLeafNode<S, I, O, ADTNode<S, I, O>>
         implements ADTNode<S, I, O> {
 

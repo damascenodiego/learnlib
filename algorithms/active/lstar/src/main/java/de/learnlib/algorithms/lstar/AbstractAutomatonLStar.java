@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,18 +17,17 @@ package de.learnlib.algorithms.lstar;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import de.learnlib.api.algorithm.feature.ResumableLearner;
+import de.learnlib.api.Resumable;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.datastructure.observationtable.ObservationTable;
 import de.learnlib.datastructure.observationtable.Row;
-import net.automatalib.automata.GrowableAlphabetAutomaton;
+import net.automatalib.SupportsGrowingAlphabet;
 import net.automatalib.automata.MutableDeterministic;
-import net.automatalib.commons.util.collections.CollectionsUtil;
 import net.automatalib.words.Alphabet;
-import net.automatalib.words.impl.SymbolHidingAlphabet;
 
 /**
  * Abstract base class for algorithms that produce (subclasses of) {@link MutableDeterministic} automata.
@@ -49,8 +48,8 @@ import net.automatalib.words.impl.SymbolHidingAlphabet;
  *
  * @author Malte Isberner
  */
-public abstract class AbstractAutomatonLStar<A, I, D, S, T, SP, TP, AI extends MutableDeterministic<S, I, T, SP, TP> & GrowableAlphabetAutomaton<I>>
-        extends AbstractLStar<A, I, D> implements ResumableLearner<AutomatonLStarState<I, D, AI, S>> {
+public abstract class AbstractAutomatonLStar<A, I, D, S, T, SP, TP, AI extends MutableDeterministic<S, I, T, SP, TP> & SupportsGrowingAlphabet<I>>
+        extends AbstractLStar<A, I, D> implements Resumable<AutomatonLStarState<I, D, AI, S>> {
 
     protected AI internalHyp;
     protected List<StateInfo<S, I>> stateInfos = new ArrayList<>();
@@ -64,7 +63,7 @@ public abstract class AbstractAutomatonLStar<A, I, D, S, T, SP, TP, AI extends M
      *         the learning oracle
      */
     protected AbstractAutomatonLStar(Alphabet<I> alphabet, MembershipOracle<I, D> oracle, AI internalHyp) {
-        super(SymbolHidingAlphabet.wrapIfMutable(alphabet), oracle);
+        super(alphabet, oracle);
         this.internalHyp = internalHyp;
         internalHyp.clear();
     }
@@ -87,6 +86,7 @@ public abstract class AbstractAutomatonLStar<A, I, D, S, T, SP, TP, AI extends M
      * #stateProperty(ObservationTable, Row)} and {@link #transitionProperty(ObservationTable, Row, int)} methods are
      * used to derive the respective properties.
      */
+    @SuppressWarnings("argument.type.incompatible") // all added nulls to stateInfos will be correctly set to non-null values
     protected void updateInternalHypothesis() {
         if (!table.isInitialized()) {
             throw new IllegalStateException("Cannot update internal hypothesis: not initialized");
@@ -97,7 +97,7 @@ public abstract class AbstractAutomatonLStar<A, I, D, S, T, SP, TP, AI extends M
 
         int newStates = numDistinct - oldStates;
 
-        stateInfos.addAll(CollectionsUtil.nullList(newStates));
+        stateInfos.addAll(Collections.nCopies(newStates, null));
 
         // TODO: Is there a quicker way than iterating over *all* rows?
         // FIRST PASS: Create new hypothesis states
@@ -187,16 +187,13 @@ public abstract class AbstractAutomatonLStar<A, I, D, S, T, SP, TP, AI extends M
 
     @Override
     public void addAlphabetSymbol(I symbol) {
-
-        if (alphabet.containsSymbol(symbol)) {
-            return;
-        }
+        super.addAlphabetSymbol(symbol);
 
         this.internalHyp.addAlphabetSymbol(symbol);
 
-        SymbolHidingAlphabet.runWhileHiding(alphabet, symbol, () -> super.addAlphabetSymbol(symbol));
-
-        this.updateInternalHypothesis();
+        if (this.table.isInitialized()) {
+            this.updateInternalHypothesis();
+        }
     }
 
     @Override

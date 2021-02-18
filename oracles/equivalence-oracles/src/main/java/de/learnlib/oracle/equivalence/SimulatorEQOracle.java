@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,16 +18,41 @@ package de.learnlib.oracle.equivalence;
 import java.util.Collection;
 
 import de.learnlib.api.oracle.EquivalenceOracle;
+import de.learnlib.api.oracle.EquivalenceOracle.DFAEquivalenceOracle;
+import de.learnlib.api.oracle.EquivalenceOracle.MealyEquivalenceOracle;
 import de.learnlib.api.query.DefaultQuery;
+import de.learnlib.buildtool.refinement.annotation.GenerateRefinement;
+import de.learnlib.buildtool.refinement.annotation.Generic;
+import de.learnlib.buildtool.refinement.annotation.Interface;
+import de.learnlib.buildtool.refinement.annotation.Map;
 import net.automatalib.automata.UniversalDeterministicAutomaton;
 import net.automatalib.automata.concepts.Output;
 import net.automatalib.automata.fsa.DFA;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.util.automata.Automata;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-public class SimulatorEQOracle<I, D>
-        implements EquivalenceOracle<UniversalDeterministicAutomaton<?, I, ?, ?, ?>, I, D> {
+@GenerateRefinement(name = "DFASimulatorEQOracle",
+                    generics = "I",
+                    parentGenerics = {@Generic(clazz = DFA.class, generics = {"?", "I"}),
+                                      @Generic("I"),
+                                      @Generic(clazz = Boolean.class)},
+                    parameterMapping = @Map(from = UniversalDeterministicAutomaton.class,
+                                            to = DFA.class,
+                                            withGenerics = {"?", "I"}),
+                    interfaces = @Interface(clazz = DFAEquivalenceOracle.class, generics = "I"))
+@GenerateRefinement(name = "MealySimulatorEQOracle",
+                    generics = {"I", "O"},
+                    parentGenerics = {@Generic(clazz = MealyMachine.class, generics = {"?", "I", "?", "O"}),
+                                      @Generic("I"),
+                                      @Generic(clazz = Word.class, generics = "O")},
+                    parameterMapping = @Map(from = UniversalDeterministicAutomaton.class,
+                                            to = MealyMachine.class,
+                                            withGenerics = {"?", "I", "?", "O"}),
+                    interfaces = @Interface(clazz = MealyEquivalenceOracle.class, generics = {"I", "O"}))
+public class SimulatorEQOracle<A extends UniversalDeterministicAutomaton<?, I, ?, ?, ?>, I, D>
+        implements EquivalenceOracle<A, I, D> {
 
     private final UniversalDeterministicAutomaton<?, I, ?, ?, ?> reference;
     private final Output<I, D> output;
@@ -38,8 +63,7 @@ public class SimulatorEQOracle<I, D>
     }
 
     @Override
-    public DefaultQuery<I, D> findCounterExample(UniversalDeterministicAutomaton<?, I, ?, ?, ?> hypothesis,
-                                                 Collection<? extends I> inputs) {
+    public @Nullable DefaultQuery<I, D> findCounterExample(A hypothesis, Collection<? extends I> inputs) {
         final Word<I> sep = Automata.findSeparatingWord(reference, hypothesis, inputs);
 
         if (sep == null) {
@@ -48,35 +72,4 @@ public class SimulatorEQOracle<I, D>
 
         return new DefaultQuery<>(sep, output.computeOutput(sep));
     }
-
-    public static class DFASimulatorEQOracle<I> implements DFAEquivalenceOracle<I> {
-
-        private final SimulatorEQOracle<I, Boolean> delegate;
-
-        public DFASimulatorEQOracle(DFA<?, I> dfa) {
-            this.delegate = new SimulatorEQOracle<>(dfa);
-        }
-
-        @Override
-        public DefaultQuery<I, Boolean> findCounterExample(DFA<?, I> hypothesis, Collection<? extends I> inputs) {
-            return delegate.findCounterExample(hypothesis, inputs);
-        }
-    }
-
-    public static class MealySimulatorEQOracle<I, O> implements MealyEquivalenceOracle<I, O> {
-
-        private final SimulatorEQOracle<I, Word<O>> delegate;
-
-        public MealySimulatorEQOracle(MealyMachine<?, I, ?, O> mealy) {
-            this.delegate = new SimulatorEQOracle<>(mealy);
-        }
-
-        @Override
-        public DefaultQuery<I, Word<O>> findCounterExample(MealyMachine<?, I, ?, O> hypothesis,
-                                                           Collection<? extends I> inputs) {
-            return delegate.findCounterExample(hypothesis, inputs);
-        }
-
-    }
-
 }

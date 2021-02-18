@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,7 +48,7 @@ public abstract class AbstractTemporaryIntrusiveDTNode<DSCR, O, D, T extends Int
     protected N nextElement;
 
     // LEAF NODE DATA
-    protected boolean temp;
+    private boolean temp;
 
     public AbstractTemporaryIntrusiveDTNode(N parent, O parentOutcome, D data) {
         super(parent, parentOutcome, data);
@@ -94,7 +94,7 @@ public abstract class AbstractTemporaryIntrusiveDTNode<DSCR, O, D, T extends Int
         if (prevElement != null) {
             prevElement.setNextElement(nextElement);
             if (nextElement != null) {
-                getNextElement().prevElement = prevElement;
+                nextElement.prevElement = prevElement;
             }
             nextElement = null;
             prevElement = null;

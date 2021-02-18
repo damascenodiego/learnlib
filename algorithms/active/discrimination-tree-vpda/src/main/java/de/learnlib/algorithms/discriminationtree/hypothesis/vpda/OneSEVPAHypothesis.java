@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,9 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.automatalib.automata.vpda.AbstractOneSEVPA;
+import net.automatalib.automata.vpda.StackContents;
 import net.automatalib.automata.vpda.State;
 import net.automatalib.words.VPDAlphabet;
-import net.automatalib.words.Word;
 
 /**
  * @param <I>
@@ -44,8 +44,10 @@ public class OneSEVPAHypothesis<I> extends AbstractOneSEVPA<HypLoc<I>, I> {
             case INTERNAL:
                 return state.getLocation().getInternalTransition(alphabet.getInternalSymbolIndex(sym));
             case RETURN:
+                StackContents stackContents = state.getStackContents();
+                assert stackContents != null;
                 return state.getLocation()
-                            .getReturnTransition(alphabet.getReturnSymbolIndex(sym), state.getStackContents().peek());
+                            .getReturnTransition(alphabet.getReturnSymbolIndex(sym), stackContents.peek());
             default:
                 return null;
         }
@@ -64,12 +66,6 @@ public class OneSEVPAHypothesis<I> extends AbstractOneSEVPA<HypLoc<I>, I> {
         return loc.getReturnTransition(alphabet.getReturnSymbolIndex(retSym), stackSym);
     }
 
-    public HypLoc<I> createLocation(boolean accepting, Word<I> aseq) {
-        HypLoc<I> loc = new HypLoc<>(alphabet, locations.size(), accepting, aseq);
-        locations.add(loc);
-        return loc;
-    }
-
     public HypLoc<I> createLocation(boolean accepting, AbstractHypTrans<I> treeIncoming) {
         HypLoc<I> loc = new HypLoc<>(alphabet, locations.size(), accepting, treeIncoming);
         locations.add(loc);
@@ -77,7 +73,7 @@ public class OneSEVPAHypothesis<I> extends AbstractOneSEVPA<HypLoc<I>, I> {
     }
 
     public HypLoc<I> initialize() {
-        HypLoc<I> loc = createLocation(false, (AbstractHypTrans<I>) null);
+        HypLoc<I> loc = createLocation(false, null);
         this.initLoc = loc;
 
         return loc;
@@ -95,7 +91,7 @@ public class OneSEVPAHypothesis<I> extends AbstractOneSEVPA<HypLoc<I>, I> {
 
     @Override
     public int getLocationId(HypLoc<I> loc) {
-        return loc.index;
+        return loc.getIndex();
     }
 
     @Override

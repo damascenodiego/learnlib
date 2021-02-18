@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,42 +18,21 @@ package de.learnlib.util;
 import java.util.Collection;
 import java.util.Objects;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import de.learnlib.api.oracle.MembershipOracle;
+import de.learnlib.api.oracle.OmegaQueryAnswerer;
 import de.learnlib.api.oracle.QueryAnswerer;
 import de.learnlib.api.query.DefaultQuery;
+import de.learnlib.api.query.OmegaQuery;
 import de.learnlib.api.query.Query;
-import de.learnlib.setting.LearnLibSettings;
 import net.automatalib.automata.concepts.SuffixOutput;
+import net.automatalib.commons.util.Pair;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-@ParametersAreNonnullByDefault
 public final class MQUtil {
-
-    public static final int PARALLEL_THRESHOLD;
-
-    static {
-        LearnLibSettings settings = LearnLibSettings.getInstance();
-        PARALLEL_THRESHOLD = settings.getInt("queries.parallel.threshold", -1);
-    }
 
     private MQUtil() {
         // prevent instantiation
-    }
-
-    @Deprecated
-    @Nullable
-    public static <I, D> D output(MembershipOracle<I, D> oracle, Word<I> queryWord) {
-        return oracle.answerQuery(queryWord);
-    }
-
-    @Deprecated
-    @Nullable
-    public static <I, D> D output(MembershipOracle<I, D> oracle, Word<I> prefix, Word<I> suffix) {
-        return oracle.answerQuery(prefix, suffix);
     }
 
     public static <I, D> DefaultQuery<I, D> normalize(MembershipOracle<I, D> oracle, DefaultQuery<I, D> query) {
@@ -63,25 +42,14 @@ public final class MQUtil {
         return query(oracle, Word.epsilon(), query.getInput());
     }
 
-    @Nonnull
     public static <I, D> DefaultQuery<I, D> query(MembershipOracle<I, D> oracle, Word<I> prefix, Word<I> suffix) {
         DefaultQuery<I, D> qry = new DefaultQuery<>(prefix, suffix);
         oracle.processQuery(qry);
         return qry;
     }
 
-    @Nonnull
     public static <I, D> DefaultQuery<I, D> query(MembershipOracle<I, D> oracle, Word<I> queryWord) {
         return query(oracle, Word.epsilon(), queryWord);
-    }
-
-    public static <I, D> void answerQueriesAuto(QueryAnswerer<I, D> answerer,
-                                                Collection<? extends Query<I, D>> queries) {
-        if (PARALLEL_THRESHOLD < 0 || queries.size() < PARALLEL_THRESHOLD) {
-            answerQueries(answerer, queries);
-        } else {
-            answerQueriesParallel(answerer, queries);
-        }
     }
 
     public static <I, D> void answerQueries(QueryAnswerer<I, D> answerer, Collection<? extends Query<I, D>> queries) {
@@ -93,14 +61,15 @@ public final class MQUtil {
         }
     }
 
-    public static <I, D> void answerQueriesParallel(QueryAnswerer<I, D> answerer,
-                                                    Collection<? extends Query<I, D>> queries) {
-        queries.parallelStream().forEach(q -> {
-            Word<I> prefix = q.getPrefix();
-            Word<I> suffix = q.getSuffix();
-            D answer = answerer.answerQuery(prefix, suffix);
-            q.answer(answer);
-        });
+    public static <S, I, D> void answerOmegaQueries(OmegaQueryAnswerer<S, I, D> answerer,
+                                                    Collection<? extends OmegaQuery<I, D>> queries) {
+        for (OmegaQuery<I, D> query : queries) {
+            final Word<I> prefix = query.getPrefix();
+            final Word<I> loop = query.getLoop();
+            final int repeat = query.getRepeat();
+            Pair<@Nullable D, Integer> answer = answerer.answerQuery(prefix, loop, repeat);
+            query.answer(answer.getFirst(), answer.getSecond());
+        }
     }
 
     public static <I, D> boolean isCounterexample(DefaultQuery<I, D> query, SuffixOutput<I, D> hyp) {

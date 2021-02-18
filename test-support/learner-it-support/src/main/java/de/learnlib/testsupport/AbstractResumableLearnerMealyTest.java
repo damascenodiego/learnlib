@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,11 +18,13 @@ package de.learnlib.testsupport;
 import java.io.Serializable;
 import java.util.Random;
 
+import de.learnlib.api.Resumable;
 import de.learnlib.api.algorithm.LearningAlgorithm;
-import de.learnlib.api.algorithm.feature.ResumableLearner;
+import de.learnlib.api.oracle.EquivalenceOracle.MealyEquivalenceOracle;
 import de.learnlib.api.oracle.MembershipOracle;
-import de.learnlib.oracle.membership.SimulatorOracle;
-import net.automatalib.automata.transout.MealyMachine;
+import de.learnlib.api.oracle.QueryAnswerer;
+import de.learnlib.oracle.equivalence.MealySimulatorEQOracle;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.util.automata.random.RandomAutomata;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
@@ -31,7 +33,7 @@ import net.automatalib.words.impl.Alphabets;
 /**
  * @author bainczyk
  */
-public abstract class AbstractResumableLearnerMealyTest<L extends ResumableLearner<T> & LearningAlgorithm<MealyMachine<?, Character, ?, Character>, Character, Word<Character>>, T extends Serializable>
+public abstract class AbstractResumableLearnerMealyTest<L extends Resumable<T> & LearningAlgorithm<MealyMachine<?, Character, ?, Character>, Character, Word<Character>>, T extends Serializable>
         extends AbstractResumableLearnerTest<L, MealyMachine<?, Character, ?, Character>, MembershipOracle<Character, Word<Character>>, Character, Word<Character>, T> {
 
     private static final int AUTOMATON_SIZE = 20;
@@ -51,6 +53,11 @@ public abstract class AbstractResumableLearnerMealyTest<L extends ResumableLearn
 
     @Override
     protected MembershipOracle<Character, Word<Character>> getOracle(MealyMachine<?, Character, ?, Character> target) {
-        return new SimulatorOracle<>(target);
+        return ((QueryAnswerer<Character, Word<Character>>) target::computeSuffixOutput).asOracle();
+    }
+
+    @Override
+    protected MealyEquivalenceOracle<Character, Character> getEquivalenceOracle(MealyMachine<?, Character, ?, Character> target) {
+        return new MealySimulatorEQOracle<>(target);
     }
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,12 +18,13 @@ package de.learnlib.algorithms.adt.util;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import de.learnlib.algorithms.adt.adt.ADTLeafNode;
 import de.learnlib.algorithms.adt.adt.ADTNode;
 import de.learnlib.algorithms.adt.adt.ADTSymbolNode;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.commons.util.Pair;
 import net.automatalib.graphs.ads.ADSNode;
 import net.automatalib.words.Word;
@@ -148,12 +149,12 @@ public final class ADTUtil {
             parentIter = parentIter.getParent();
         }
 
-        return new Pair<>(inputBuilder.reverse().toWord(), outputBuilder.reverse().toWord());
+        return Pair.of(inputBuilder.reverse().toWord(), outputBuilder.reverse().toWord());
     }
 
     public static <S, I, O> O getOutputForSuccessor(final ADTNode<S, I, O> node, final ADTNode<S, I, O> successor) {
 
-        if (!successor.getParent().equals(node)) {
+        if (!node.equals(successor.getParent())) {
             throw new IllegalArgumentException("No parent relationship");
         }
 
@@ -254,7 +255,7 @@ public final class ADTUtil {
             tempInput = nextInput;
         }
 
-        return new Pair<>(head, tempADS);
+        return Pair.of(head, tempADS);
     }
 
     /**
@@ -325,7 +326,7 @@ public final class ADTUtil {
 
         while (!(ADTUtil.isLeafNode(parentIter) || ADTUtil.isResetNode(parentIter)) && !ADTUtil.isLeafNode(childIter)) {
 
-            if (!parentIter.getSymbol().equals(childIter.getSymbol())) {
+            if (!Objects.equals(parentIter.getSymbol(), childIter.getSymbol())) {
                 return false;
             }
 

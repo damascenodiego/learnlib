@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 package de.learnlib.datastructure.observationtable.reader;
-
-import javax.annotation.Nonnull;
 
 import de.learnlib.datastructure.observationtable.ObservationTable;
 import net.automatalib.words.Alphabet;
@@ -43,7 +41,6 @@ public interface ObservationTableReader<I, D> {
      * ObservationTable#getSuffixes()}, {@link ObservationTable#getShortPrefixes()}, and {@link
      * ObservationTable#getLongPrefixes()}. Will never be {@code null}.
      */
-    @Nonnull
-    ObservationTable<I, D> read(@Nonnull String source, @Nonnull Alphabet<I> alphabet);
+    ObservationTable<I, D> read(String source, Alphabet<I> alphabet);
 
 }

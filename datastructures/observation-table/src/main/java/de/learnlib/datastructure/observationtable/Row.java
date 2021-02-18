@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 package de.learnlib.datastructure.observationtable;
-
-import javax.annotation.Nonnull;
 
 import net.automatalib.words.Word;
 
@@ -58,7 +56,6 @@ public interface Row<I> {
      *
      * @return the label of this row
      */
-    @Nonnull
     Word<I> getLabel();
 
     /**

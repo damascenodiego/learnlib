@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,22 +15,48 @@
  */
 package de.learnlib.oracle.equivalence;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Stream;
 
+import de.learnlib.api.oracle.EquivalenceOracle.DFAEquivalenceOracle;
+import de.learnlib.api.oracle.EquivalenceOracle.MealyEquivalenceOracle;
 import de.learnlib.api.oracle.MembershipOracle;
+import de.learnlib.api.oracle.MembershipOracle.DFAMembershipOracle;
+import de.learnlib.api.oracle.MembershipOracle.MealyMembershipOracle;
+import de.learnlib.buildtool.refinement.annotation.GenerateRefinement;
+import de.learnlib.buildtool.refinement.annotation.Generic;
+import de.learnlib.buildtool.refinement.annotation.Interface;
+import de.learnlib.buildtool.refinement.annotation.Map;
 import net.automatalib.automata.concepts.Output;
 import net.automatalib.automata.fsa.DFA;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
+import net.automatalib.commons.util.collections.CollectionsUtil;
 import net.automatalib.words.Word;
 import net.automatalib.words.WordBuilder;
 
 /**
  * @author Maik Merten
  */
+@GenerateRefinement(name = "DFARandomWordsEQOracle",
+                    generics = "I",
+                    parentGenerics = {@Generic(clazz = DFA.class, generics = {"?", "I"}),
+                                      @Generic("I"),
+                                      @Generic(clazz = Boolean.class)},
+                    parameterMapping = @Map(from = MembershipOracle.class,
+                                            to = DFAMembershipOracle.class,
+                                            withGenerics = "I"),
+                    interfaces = @Interface(clazz = DFAEquivalenceOracle.class, generics = "I"))
+@GenerateRefinement(name = "MealyRandomWordsEQOracle",
+                    generics = {"I", "O"},
+                    parentGenerics = {@Generic(clazz = MealyMachine.class, generics = {"?", "I", "?", "O"}),
+                                      @Generic("I"),
+                                      @Generic(clazz = Word.class, generics = "O")},
+                    parameterMapping = @Map(from = MembershipOracle.class,
+                                            to = MealyMembershipOracle.class,
+                                            withGenerics = {"I", "O"}),
+                    interfaces = @Interface(clazz = MealyEquivalenceOracle.class, generics = {"I", "O"}))
 public class RandomWordsEQOracle<A extends Output<I, D>, I, D> extends AbstractTestWordEQOracle<A, I, D> {
 
     private final Random random;
@@ -38,11 +64,8 @@ public class RandomWordsEQOracle<A extends Output<I, D>, I, D> extends AbstractT
     private final int minLength;
     private final int maxLength;
 
-    public RandomWordsEQOracle(MembershipOracle<I, D> mqOracle,
-                               int minLength,
-                               int maxLength,
-                               int maxTests) {
-        this(mqOracle, minLength, maxLength, maxTests, new Random(), 1);
+    public RandomWordsEQOracle(MembershipOracle<I, D> mqOracle, int minLength, int maxLength, int maxTests) {
+        this(mqOracle, minLength, maxLength, maxTests, new Random());
     }
 
     public RandomWordsEQOracle(MembershipOracle<I, D> mqOracle,
@@ -69,12 +92,7 @@ public class RandomWordsEQOracle<A extends Output<I, D>, I, D> extends AbstractT
     @Override
     protected Stream<Word<I>> generateTestWords(A hypothesis, Collection<? extends I> inputs) {
 
-        final List<? extends I> symbolList;
-        if (inputs instanceof List) {
-            symbolList = (List<? extends I>) inputs;
-        } else {
-            symbolList = new ArrayList<>(inputs);
-        }
+        final List<? extends I> symbolList = CollectionsUtil.randomAccessList(inputs);
 
         return Stream.generate(() -> generateTestWord(symbolList, symbolList.size())).limit(maxTests);
     }
@@ -91,47 +109,5 @@ public class RandomWordsEQOracle<A extends Output<I, D>, I, D> extends AbstractT
         }
 
         return result.toWord();
-    }
-
-    public static class DFARandomWordsEQOracle<I> extends RandomWordsEQOracle<DFA<?, I>, I, Boolean>
-            implements DFAEquivalenceOracle<I> {
-
-        public DFARandomWordsEQOracle(MembershipOracle<I, Boolean> mqOracle,
-                                      int minLength,
-                                      int maxLength,
-                                      int maxTests,
-                                      Random random) {
-            super(mqOracle, minLength, maxLength, maxTests, random);
-        }
-
-        public DFARandomWordsEQOracle(MembershipOracle<I, Boolean> mqOracle,
-                                      int minLength,
-                                      int maxLength,
-                                      int maxTests,
-                                      Random random,
-                                      int batchSize) {
-            super(mqOracle, minLength, maxLength, maxTests, random, batchSize);
-        }
-    }
-
-    public static class MealyRandomWordsEQOracle<I, O> extends RandomWordsEQOracle<MealyMachine<?, I, ?, O>, I, Word<O>>
-            implements MealyEquivalenceOracle<I, O> {
-
-        public MealyRandomWordsEQOracle(MembershipOracle<I, Word<O>> mqOracle,
-                                        int minLength,
-                                        int maxLength,
-                                        int maxTests,
-                                        Random random) {
-            super(mqOracle, minLength, maxLength, maxTests, random);
-        }
-
-        public MealyRandomWordsEQOracle(MembershipOracle<I, Word<O>> mqOracle,
-                                        int minLength,
-                                        int maxLength,
-                                        int maxTests,
-                                        Random random,
-                                        int batchSize) {
-            super(mqOracle, minLength, maxLength, maxTests, random, batchSize);
-        }
     }
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,7 @@
 package de.learnlib.datastructure.discriminationtree.model;
 
 import de.learnlib.api.oracle.MembershipOracle;
+import de.learnlib.api.query.DefaultQuery;
 import net.automatalib.words.Word;
 
 /**
@@ -37,14 +38,8 @@ public abstract class AbstractWordBasedDiscriminationTree<I, O, D>
         super(root, oracle);
     }
 
-    public AbstractWordBasedDTNode<I, O, D> sift(AbstractWordBasedDTNode<I, O, D> start, Word<I> prefix) {
-        AbstractWordBasedDTNode<I, O, D> curr = start;
-
-        while (!curr.isLeaf()) {
-            O out = super.oracle.answerQuery(prefix, curr.getDiscriminator());
-            curr = curr.child(out);
-        }
-
-        return curr;
+    @Override
+    protected DefaultQuery<I, O> buildQuery(AbstractWordBasedDTNode<I, O, D> node, Word<I> prefix) {
+        return new DefaultQuery<>(prefix, node.getDiscriminator());
     }
 }

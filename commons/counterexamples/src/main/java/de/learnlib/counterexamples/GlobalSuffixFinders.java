@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,7 @@ import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.Query;
 import net.automatalib.automata.concepts.SuffixOutput;
 import net.automatalib.words.Word;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A collection of suffix-based global counterexample analyzers.
@@ -37,21 +38,22 @@ public final class GlobalSuffixFinders {
      *
      * @see #findMalerPnueli(Query)
      */
-    public static final GlobalSuffixFinder<Object, Object> MALER_PNUELI = new GlobalSuffixFinder<Object, Object>() {
+    public static final GlobalSuffixFinder<@Nullable Object, @Nullable Object> MALER_PNUELI =
+            new GlobalSuffixFinder<@Nullable Object, @Nullable Object>() {
 
-        @Override
-        public <RI, RD> List<Word<RI>> findSuffixes(Query<RI, RD> ceQuery,
-                                                    AccessSequenceTransformer<RI> asTransformer,
-                                                    SuffixOutput<RI, RD> hypOutput,
-                                                    MembershipOracle<RI, RD> oracle) {
-            return findMalerPnueli(ceQuery);
-        }
+                @Override
+                public <RI, RD> List<Word<RI>> findSuffixes(Query<RI, RD> ceQuery,
+                                                            AccessSequenceTransformer<RI> asTransformer,
+                                                            SuffixOutput<RI, RD> hypOutput,
+                                                            MembershipOracle<RI, RD> oracle) {
+                    return findMalerPnueli(ceQuery);
+                }
 
-        @Override
-        public String toString() {
-            return "MalerPnueli";
-        }
-    };
+                @Override
+                public String toString() {
+                    return "MalerPnueli";
+                }
+            };
 
     /**
      * Adds all suffixes of the remainder of the input word, after stripping a maximal one-letter extension of an access
@@ -59,28 +61,29 @@ public final class GlobalSuffixFinders {
      *
      * @see #findShahbaz(Query, AccessSequenceTransformer)
      */
-    public static final GlobalSuffixFinder<Object, Object> SHAHBAZ = new GlobalSuffixFinder<Object, Object>() {
+    public static final GlobalSuffixFinder<@Nullable Object, @Nullable Object> SHAHBAZ =
+            new GlobalSuffixFinder<@Nullable Object, @Nullable Object>() {
 
-        @Override
-        public <RI, RD> List<Word<RI>> findSuffixes(Query<RI, RD> ceQuery,
-                                                    AccessSequenceTransformer<RI> asTransformer,
-                                                    SuffixOutput<RI, RD> hypOutput,
-                                                    MembershipOracle<RI, RD> oracle) {
-            return findShahbaz(ceQuery, asTransformer);
-        }
+                @Override
+                public <RI, RD> List<Word<RI>> findSuffixes(Query<RI, RD> ceQuery,
+                                                            AccessSequenceTransformer<RI> asTransformer,
+                                                            SuffixOutput<RI, RD> hypOutput,
+                                                            MembershipOracle<RI, RD> oracle) {
+                    return findShahbaz(ceQuery, asTransformer);
+                }
 
-        @Override
-        public String toString() {
-            return "Shahbaz";
-        }
-    };
+                @Override
+                public String toString() {
+                    return "Shahbaz";
+                }
+            };
 
     /**
      * Adds the single suffix found by the access sequence transformation in ascending linear order.
      *
      * @see #findLinear(Query, AccessSequenceTransformer, SuffixOutput, MembershipOracle, boolean)
      */
-    public static final GlobalSuffixFinder<Object, Object> FIND_LINEAR =
+    public static final GlobalSuffixFinder<@Nullable Object, @Nullable Object> FIND_LINEAR =
             fromLocalFinder(LocalSuffixFinders.FIND_LINEAR, false);
 
     /**
@@ -88,7 +91,7 @@ public final class GlobalSuffixFinders {
      *
      * @see #findLinear(Query, AccessSequenceTransformer, SuffixOutput, MembershipOracle, boolean)
      */
-    public static final GlobalSuffixFinder<Object, Object> FIND_LINEAR_ALLSUFFIXES =
+    public static final GlobalSuffixFinder<@Nullable Object, @Nullable Object> FIND_LINEAR_ALLSUFFIXES =
             fromLocalFinder(LocalSuffixFinders.FIND_LINEAR, true);
 
     /**
@@ -96,7 +99,7 @@ public final class GlobalSuffixFinders {
      *
      * @see #findLinearReverse(Query, AccessSequenceTransformer, SuffixOutput, MembershipOracle, boolean)
      */
-    public static final GlobalSuffixFinder<Object, Object> FIND_LINEAR_REVERSE =
+    public static final GlobalSuffixFinder<@Nullable Object, @Nullable Object> FIND_LINEAR_REVERSE =
             fromLocalFinder(LocalSuffixFinders.FIND_LINEAR_REVERSE, false);
 
     /**
@@ -104,7 +107,7 @@ public final class GlobalSuffixFinders {
      *
      * @see #findLinearReverse(Query, AccessSequenceTransformer, SuffixOutput, MembershipOracle, boolean)
      */
-    public static final GlobalSuffixFinder<Object, Object> FIND_LINEAR_REVERSE_ALLSUFFIXES =
+    public static final GlobalSuffixFinder<@Nullable Object, @Nullable Object> FIND_LINEAR_REVERSE_ALLSUFFIXES =
             fromLocalFinder(LocalSuffixFinders.FIND_LINEAR_REVERSE, true);
 
     /**
@@ -112,7 +115,7 @@ public final class GlobalSuffixFinders {
      *
      * @see #findRivestSchapire(Query, AccessSequenceTransformer, SuffixOutput, MembershipOracle, boolean)
      */
-    public static final GlobalSuffixFinder<Object, Object> RIVEST_SCHAPIRE =
+    public static final GlobalSuffixFinder<@Nullable Object, @Nullable Object> RIVEST_SCHAPIRE =
             fromLocalFinder(LocalSuffixFinders.RIVEST_SCHAPIRE, false);
 
     /**
@@ -120,16 +123,15 @@ public final class GlobalSuffixFinders {
      *
      * @see #findRivestSchapire(Query, AccessSequenceTransformer, SuffixOutput, MembershipOracle, boolean)
      */
-    public static final GlobalSuffixFinder<Object, Object> RIVEST_SCHAPIRE_ALLSUFFIXES =
+    public static final GlobalSuffixFinder<@Nullable Object, @Nullable Object> RIVEST_SCHAPIRE_ALLSUFFIXES =
             fromLocalFinder(LocalSuffixFinders.RIVEST_SCHAPIRE, true);
 
     // prevent instantiation
-    private GlobalSuffixFinders() {
-    }
+    private GlobalSuffixFinders() {}
 
     /**
-     * Transforms a {@link LocalSuffixFinder} into a global one. This is a convenience method, behaving like
-     * <tt>fromLocalFinder(localFinder, false)</tt>.
+     * Transforms a {@link LocalSuffixFinder} into a global one. This is a convenience method, behaving like {@link
+     * #fromLocalFinder(LocalSuffixFinder, boolean)}.
      *
      * @see #fromLocalFinder(LocalSuffixFinder, boolean)
      */
@@ -142,7 +144,7 @@ public final class GlobalSuffixFinders {
      * suffix-closedness of the set of distinguishing suffixes might not be preserved. Note that for correctly
      * implemented local suffix finders, this does not impair correctness of the learning algorithm. However, without
      * suffix closedness, intermediate hypothesis models might be non-canonical, if no additional precautions are taken.
-     * For that reasons, the <tt>allSuffixes</tt> parameter can be specified to control whether or not the list returned
+     * For that reasons, the {@code allSuffixes} parameter can be specified to control whether or not the list returned
      * by {@link GlobalSuffixFinder#findSuffixes(Query, AccessSequenceTransformer, SuffixOutput, MembershipOracle)} of
      * the returned global suffix finder should not only contain the single suffix, but also all of its suffixes,
      * ensuring suffix-closedness.
@@ -161,9 +163,9 @@ public final class GlobalSuffixFinders {
 
             @Override
             public <RI extends I, RD extends D> List<Word<RI>> findSuffixes(Query<RI, RD> ceQuery,
-                                                                                      AccessSequenceTransformer<RI> asTransformer,
-                                                                                      SuffixOutput<RI, RD> hypOutput,
-                                                                                      MembershipOracle<RI, RD> oracle) {
+                                                                            AccessSequenceTransformer<RI> asTransformer,
+                                                                            SuffixOutput<RI, RD> hypOutput,
+                                                                            MembershipOracle<RI, RD> oracle) {
                 int idx = localFinder.findSuffixIndex(ceQuery, asTransformer, hypOutput, oracle);
                 return suffixesForLocalOutput(ceQuery, idx, allSuffixes);
             }
@@ -189,7 +191,7 @@ public final class GlobalSuffixFinders {
      * suffix-closedness of the set of distinguishing suffixes might not be preserved. Note that for correctly
      * implemented local suffix finders, this does not impair correctness of the learning algorithm. However, without
      * suffix closedness, intermediate hypothesis models might be non-canonical, if no additional precautions are taken.
-     * For that reasons, the <tt>allSuffixes</tt> parameter can be specified to control whether or not the list returned
+     * For that reasons, the {@code allSuffixes} parameter can be specified to control whether or not the list returned
      * by {@link GlobalSuffixFinder#findSuffixes(Query, AccessSequenceTransformer, SuffixOutput, MembershipOracle)} of
      * the returned global suffix finder should not only contain the single suffix, but also all of its suffixes,
      * ensuring suffix-closedness.
@@ -255,7 +257,7 @@ public final class GlobalSuffixFinders {
     }
 
     /**
-     * Returns the suffix (plus all of its suffixes, if <tt>allSuffixes</tt> is true) found by the access sequence
+     * Returns the suffix (plus all of its suffixes, if {@code allSuffixes} is true) found by the access sequence
      * transformation in ascending linear order.
      *
      * @param ceQuery
@@ -283,7 +285,7 @@ public final class GlobalSuffixFinders {
     }
 
     /**
-     * Returns the suffix (plus all of its suffixes, if <tt>allSuffixes</tt> is true) found by the access sequence
+     * Returns the suffix (plus all of its suffixes, if {@code allSuffixes} is true) found by the access sequence
      * transformation in descending linear order.
      *
      * @param ceQuery
@@ -311,7 +313,7 @@ public final class GlobalSuffixFinders {
     }
 
     /**
-     * Returns the suffix (plus all of its suffixes, if <tt>allSuffixes</tt> is true) found by the binary search access
+     * Returns the suffix (plus all of its suffixes, if {@code allSuffixes} is true) found by the binary search access
      * sequence transformation.
      *
      * @param ceQuery
@@ -339,7 +341,7 @@ public final class GlobalSuffixFinders {
     }
 
     @SuppressWarnings("unchecked")
-    public static GlobalSuffixFinder<Object, Object>[] values() {
+    public static GlobalSuffixFinder<@Nullable Object, @Nullable Object>[] values() {
         return new GlobalSuffixFinder[] {MALER_PNUELI,
                                          SHAHBAZ,
                                          FIND_LINEAR,

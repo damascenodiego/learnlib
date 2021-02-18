@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,16 +17,15 @@ package de.learnlib.datastructure.pta.pta;
 
 import java.util.Objects;
 
-import javax.annotation.Nonnegative;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.index.qual.NonNegative;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class PTATransition<S extends AbstractBasePTAState<?, ?, S>> {
 
     private final S source;
     private final int index;
 
-    public PTATransition(@Nonnull S source, @Nonnegative int index) {
+    public PTATransition(S source, @NonNegative int index) {
         this.source = Objects.requireNonNull(source);
         if (index < 0) {
             throw new IllegalArgumentException();
@@ -34,18 +33,16 @@ public class PTATransition<S extends AbstractBasePTAState<?, ?, S>> {
         this.index = index;
     }
 
-    @Nonnull
     public S getSource() {
         return source;
     }
 
-    @Nonnegative
-    public int getIndex() {
+
+    public @NonNegative int getIndex() {
         return index;
     }
 
-    @Nullable
-    public S getTarget() {
+    public @Nullable S getTarget() {
         return source.getSuccessor(index);
     }
 

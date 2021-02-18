@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,14 +22,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import net.automatalib.SupportsGrowingAlphabet;
 import net.automatalib.automata.DeterministicAutomaton;
 import net.automatalib.automata.FiniteAlphabetAutomaton;
-import net.automatalib.automata.GrowableAlphabetAutomaton;
 import net.automatalib.automata.fsa.DFA;
 import net.automatalib.graphs.Graph;
 import net.automatalib.visualization.DefaultVisualizationHelper;
 import net.automatalib.visualization.VisualizationHelper;
 import net.automatalib.words.Alphabet;
+import net.automatalib.words.GrowingAlphabet;
 import net.automatalib.words.impl.Alphabets;
 
 /**
@@ -43,12 +44,13 @@ import net.automatalib.words.impl.Alphabets;
 public abstract class AbstractTTTHypothesis<I, D, T> implements DeterministicAutomaton<TTTState<I, D>, I, T>,
                                                                 FiniteAlphabetAutomaton<TTTState<I, D>, I, T>,
                                                                 DeterministicAutomaton.FullIntAbstraction<T>,
-                                                                GrowableAlphabetAutomaton<I>,
+                                                                SupportsGrowingAlphabet<I>,
                                                                 Serializable {
 
     protected final List<TTTState<I, D>> states = new ArrayList<>();
 
     protected transient Alphabet<I> alphabet;
+    private int alphabetSize;
 
     private TTTState<I, D> initialState;
 
@@ -60,6 +62,7 @@ public abstract class AbstractTTTHypothesis<I, D, T> implements DeterministicAut
      */
     public AbstractTTTHypothesis(Alphabet<I> alphabet) {
         this.alphabet = alphabet;
+        this.alphabetSize = this.alphabet.size();
     }
 
     @Override
@@ -77,7 +80,7 @@ public abstract class AbstractTTTHypothesis<I, D, T> implements DeterministicAut
     @Override
     public T getTransition(TTTState<I, D> state, I input) {
         TTTTransition<I, D> trans = getInternalTransition(state, input);
-        return mapTransition(trans);
+        return trans == null ? null : mapTransition(trans);
     }
 
     /**
@@ -173,16 +176,20 @@ public abstract class AbstractTTTHypothesis<I, D, T> implements DeterministicAut
 
     @Override
     public void addAlphabetSymbol(I symbol) {
-        if (this.alphabet.containsSymbol(symbol)) {
-            return;
+        final GrowingAlphabet<I> growingAlphabet = Alphabets.toGrowingAlphabetOrThrowException(this.alphabet);
+
+        if (!growingAlphabet.containsSymbol(symbol)) {
+            growingAlphabet.addSymbol(symbol);
         }
 
-        this.alphabet = Alphabets.withNewSymbol(this.alphabet, symbol);
+        final int newAlphabetSize = growingAlphabet.size();
 
-        final int alphabetSize = this.alphabet.size();
+        if (alphabetSize < newAlphabetSize) {
+            for (final TTTState<I, D> s : this.getStates()) {
+                s.ensureInputCapacity(newAlphabetSize);
+            }
 
-        for (final TTTState<I, D> s : this.getStates()) {
-            s.ensureInputCapacity(alphabetSize);
+            alphabetSize = newAlphabetSize;
         }
     }
 

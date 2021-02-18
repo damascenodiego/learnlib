@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,37 +17,38 @@ package de.learnlib.drivers.reflect;
 
 import java.util.Objects;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 /**
  * Error output.
  *
  * @author falkhowar
  */
-public class ReturnValue extends AbstractMethodOutput {
+public class ReturnValue extends MethodOutput {
 
-    private final Object ret;
+    private final @Nullable Object ret;
 
     private final String id;
 
-    public ReturnValue(Object ret) {
+    public ReturnValue(@Nullable Object ret) {
         this.ret = ret;
         this.id = String.valueOf(ret);
     }
 
     @Override
-    public int hashCode() {
-        int hash = 5;
-        hash = 19 * hash + Objects.hashCode(this.id);
-        return hash;
+    public final int hashCode() {
+        return Objects.hashCode(this.id);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
+    public final boolean equals(@Nullable Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof ReturnValue)) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
+
         final ReturnValue other = (ReturnValue) obj;
         return Objects.equals(this.id, other.id);
     }
@@ -60,7 +61,7 @@ public class ReturnValue extends AbstractMethodOutput {
     /**
      * @return the cause
      */
-    public Object getValue() {
+    public @Nullable Object getValue() {
         return ret;
     }
 

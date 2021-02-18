@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,15 +16,16 @@
 package de.learnlib.filter.cache.mealy;
 
 import java.util.Collection;
-import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import de.learnlib.api.oracle.EquivalenceOracle;
 import de.learnlib.api.oracle.EquivalenceOracle.MealyEquivalenceOracle;
 import de.learnlib.api.query.DefaultQuery;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.incremental.mealy.IncrementalMealyBuilder;
 import net.automatalib.words.Word;
 import net.automatalib.words.WordBuilder;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * An {@link EquivalenceOracle} that tests an hypothesis for consistency with the contents of a {@link
@@ -40,26 +41,28 @@ import net.automatalib.words.WordBuilder;
 public class MealyCacheConsistencyTest<I, O> implements MealyEquivalenceOracle<I, O> {
 
     private final IncrementalMealyBuilder<I, O> incMealy;
-    private final Lock incMealyLock;
+    private final ReadWriteLock incMealyLock;
 
     /**
      * Constructor.
      *
      * @param incMealy
-     *         the {@link IncrementalMealyBuilder} data structure underlying the cache.
+     *         the {@link IncrementalMealyBuilder} data structure underlying the cache
+     * @param lock
+     *         the read-write lock for accessing the cache concurrently
      */
-    public MealyCacheConsistencyTest(IncrementalMealyBuilder<I, O> incMealy, Lock lock) {
+    public MealyCacheConsistencyTest(IncrementalMealyBuilder<I, O> incMealy, ReadWriteLock lock) {
         this.incMealy = incMealy;
         this.incMealyLock = lock;
     }
 
     @Override
-    public DefaultQuery<I, Word<O>> findCounterExample(MealyMachine<?, I, ?, O> hypothesis,
-                                                       Collection<? extends I> inputs) {
+    public @Nullable DefaultQuery<I, Word<O>> findCounterExample(MealyMachine<?, I, ?, O> hypothesis,
+                                                                 Collection<? extends I> inputs) {
         WordBuilder<O> wb;
         Word<I> w;
 
-        incMealyLock.lock();
+        incMealyLock.readLock().lock();
         try {
             w = incMealy.findSeparatingWord(hypothesis, inputs, false);
             if (w == null) {
@@ -68,7 +71,7 @@ public class MealyCacheConsistencyTest<I, O> implements MealyEquivalenceOracle<I
             wb = new WordBuilder<>(w.length());
             incMealy.lookup(w, wb);
         } finally {
-            incMealyLock.unlock();
+            incMealyLock.readLock().unlock();
         }
 
         DefaultQuery<I, Word<O>> result = new DefaultQuery<>(w);

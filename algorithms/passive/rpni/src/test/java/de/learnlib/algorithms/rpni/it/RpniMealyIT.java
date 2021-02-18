@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2018 TU Dortmund
+/* Copyright (C) 2013-2020 TU Dortmund
  * This file is part of LearnLib, http://www.learnlib.de/.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,7 @@ package de.learnlib.algorithms.rpni.it;
 import de.learnlib.algorithms.rpni.BlueFringeRPNIMealy;
 import de.learnlib.testsupport.it.learner.AbstractMealyPassiveLearnerIT;
 import de.learnlib.testsupport.it.learner.PassiveLearnerVariantList;
-import net.automatalib.automata.transout.MealyMachine;
+import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 
